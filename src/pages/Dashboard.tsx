@@ -57,6 +57,7 @@ const getMetrics = (filename: string) => {
 
 export default function Dashboard() {
   const devices = devicesData as Device[];
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<any>(null);
 
