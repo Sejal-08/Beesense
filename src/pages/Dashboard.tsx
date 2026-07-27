@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Hexagon, Activity, Waves, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import devicesData from '../data/devices.json';
+import annamLogo from '../assets/images/annam_ai_logo.jpg';
 import '../index.css';
 
 // Types
@@ -176,9 +177,12 @@ export default function Dashboard() {
   return (
     <div className="app-container">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <Hexagon className="text-honey-primary" size={28} color="#c68a4d" />
-          <h1>Bee Audio Data</h1>
+        <div className="sidebar-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '20px' }}>
+          <img src={annamLogo} alt="Annam AI" className="logo-dark-mode" style={{ height: '36px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Hexagon className="text-honey-primary" size={28} color="#c68a4d" />
+            <h1>Bee Audio Data</h1>
+          </div>
         </div>
         <div style={{ padding: '0 24px 24px 24px' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
@@ -205,16 +209,18 @@ export default function Dashboard() {
             <header className="content-header">
               <div className="badge">+ SPECIMEN LOG • {selectedDevice.id.toUpperCase()}</div>
               <h2>{selectedDevice.name} Audio Segments</h2>
-              <p>Explore the recorded acoustic data for {selectedDevice.id}, alongside the hive's internal and external climate over the same window. Select a segment below to listen.</p>
+              <p>Explore the recorded acoustic data for {selectedDevice.id}. Select a segment below to listen.</p>
             </header>
             
             <div className="dashboard-scroll-area">
+              {/* 
               <div className="section-title-sm">+ CLIMATE READINGS</div>
               
               <div className="charts-grid">
                 <MiniChart data={chartData} title="Temperature — Inside Hive" valueKey="tempIn" color="#c68a4d" unit="°C" Icon={Hexagon} />
                 <MiniChart data={chartData} title="Humidity — Inside Hive" valueKey="humIn" color="#6b8e23" unit="%" Icon={Hexagon} />
               </div>
+              */}
 
               <div className="section-title-sm">+ RECORDED SEGMENTS</div>
               

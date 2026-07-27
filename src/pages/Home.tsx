@@ -4,6 +4,7 @@ import './Home.css';
 import '../App.css';
 import deployment3 from '../assets/images/3.jpeg';
 import deployment7 from '../assets/images/7.jpeg';
+import annamLogo from '../assets/images/annam_ai_logo.jpg';
 import ThemeToggle from '../components/ThemeToggle';
 import TransparentImage from '../components/TransparentImage';
 
@@ -58,7 +59,9 @@ export default function Home() {
     <div className="home-container">
       {/* Navigation */}
       <nav className="home-nav">
-        <div className="logo">
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src={annamLogo} alt="Annam AI" className="logo-dark-mode" style={{ height: '36px' }} />
+          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
           <BeeIcon />
           <span>BeeSense</span>
         </div>

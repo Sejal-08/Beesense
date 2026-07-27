@@ -3,7 +3,14 @@
 html {
   scroll-behavior: smooth;
   color-scheme: dark;
+  font-size: 16px; /* Base font size */
 }
+
+/* Fluid typography scaling */
+@media (max-width: 1200px) { html { font-size: 15px; } }
+@media (max-width: 992px) { html { font-size: 14px; } }
+@media (max-width: 768px) { html { font-size: 13px; } }
+@media (max-width: 480px) { html { font-size: 12px; } }
 
 html[data-theme="light"] {
   color-scheme: light;
@@ -11,6 +18,10 @@ html[data-theme="light"] {
 
 html[data-theme="dark"] {
   color-scheme: dark;
+}
+
+html[data-theme="dark"] .logo-dark-mode {
+  filter: brightness(0) invert(1);
 }
 
 :root {
@@ -112,7 +123,23 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 10;
-  box-shadow: var(--shadow-panel);
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .main-content {
+    height: auto;
+    overflow: visible;
+  }
 }
 
 .sidebar-header {
