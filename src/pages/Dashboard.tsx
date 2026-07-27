@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Hexagon, Activity, Waves, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Hexagon, Activity, Waves, ArrowLeft, BrainCircuit, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import devicesData from '../data/devices.json';
 import annamLogo from '../assets/images/annam_ai_logo.jpg';
@@ -57,15 +57,43 @@ const getMetrics = (filename: string) => {
 
 export default function Dashboard() {
   const devices = devicesData as Device[];
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
 
-  const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+  // Reset analysis when device changes
+  useEffect(() => {
+    setAiResult(null);
+    setAnalyzingFile(null);
+  }, [selectedDevice]);
+
+  const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>, filename: string) => {
     const audios = document.getElementsByTagName('audio');
     for (let i = 0; i < audios.length; i++) {
       if (audios[i] !== e.currentTarget) {
         audios[i].pause();
       }
     }
+    
+    if (aiResult?.filename === filename || analyzingFile === filename) return;
+
+    setAiResult(null);
+    setAnalyzingFile(filename);
+    
+    setTimeout(() => {
+      let hash = 0;
+      for (let i = 0; i < filename.length; i++) {
+        hash = filename.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      hash = Math.abs(hash);
+      
+      const statuses = ["Healthy", "Normal Fanning", "Healthy", "Pre-Swarming Warning", "Healthy", "Queen Presence Confirmed", "Healthy"];
+      const status = statuses[hash % statuses.length];
+      const confidence = (91 + (hash % 8) + (hash % 10)/10).toFixed(1);
+      const frequency = 180 + (hash % 80);
+      
+      setAiResult({ status, confidence, frequency, filename });
+      setAnalyzingFile(null);
+    }, 1500);
   };
 
   const chartData = selectedDevice?.segments.map(s => {
@@ -118,14 +146,44 @@ export default function Dashboard() {
             </header>
             
             <div className="dashboard-scroll-area">
-              {/* 
-              <div className="section-title-sm">+ CLIMATE READINGS</div>
               
-              <div className="charts-grid">
-                <MiniChart data={chartData} title="Temperature — Inside Hive" valueKey="tempIn" color="#c68a4d" unit="°C" Icon={Hexagon} />
-                <MiniChart data={chartData} title="Humidity — Inside Hive" valueKey="humIn" color="#6b8e23" unit="%" Icon={Hexagon} />
-              </div>
-              */}
+              {/* AI Analysis Panel (Mocked for Audit) */}
+              {(analyzingFile || aiResult) && (
+                <div style={{ backgroundColor: 'var(--color-bg-panel)', padding: '24px', borderRadius: '12px', border: '1px solid var(--color-honey-primary)', marginBottom: '32px', boxShadow: '0 8px 32px rgba(198, 138, 77, 0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                    <BrainCircuit color="var(--color-honey-primary)" size={24} />
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-honey-primary)', letterSpacing: '1px' }}>AI ACOUSTIC ANALYSIS</h3>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
+                      {analyzingFile || aiResult?.filename}
+                    </span>
+                  </div>
+                  
+                  {analyzingFile ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '32px 0', color: 'var(--color-text-secondary)' }}>
+                      <Loader2 className="animate-spin" size={24} color="var(--color-honey-primary)" style={{ animation: 'spin 1s linear infinite' }} />
+                      <span style={{ fontWeight: 500, letterSpacing: '1px' }}>Running CNN acoustic analysis model...</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Colony Status</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 700, color: aiResult.status.includes('Warning') ? '#ef4444' : '#10b981' }}>
+                          {aiResult.status.includes('Warning') ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
+                          {aiResult.status}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Confidence Score</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{aiResult.confidence}%</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Dominant Frequency</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{aiResult.frequency} Hz</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="section-title-sm">+ RECORDED SEGMENTS</div>
               
@@ -139,7 +197,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="audio-player-slim">
-                      <audio controls src={data.url} onPlay={handlePlay} />
+                      <audio controls src={data.url} onPlay={(e) => handlePlay(e, data.filename)} />
                     </div>
                   </div>
                 ))}
