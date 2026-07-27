@@ -162,7 +162,7 @@ export default function Dashboard() {
                   {analyzingFile ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '32px 0', color: 'var(--color-text-secondary)' }}>
                       <Loader2 className="animate-spin" size={24} color="var(--color-honey-primary)" style={{ animation: 'spin 1s linear infinite' }} />
-                      <span style={{ fontWeight: 500, letterSpacing: '1px' }}>Running CNN acoustic analysis model...</span>
+                      <span style={{ fontWeight: 500, letterSpacing: '1px' }}>Analyzing audio data...</span>
                     </div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
