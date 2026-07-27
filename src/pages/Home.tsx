@@ -1,4 +1,4 @@
-import { ArrowRight, Cpu, ActivitySquare, BarChart3, Cloud, Shield } from 'lucide-react';
+import { ArrowRight, ActivitySquare, BarChart3, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
@@ -19,38 +19,6 @@ const BeeIcon = () => (
   </svg>
 );
 
-const SpecimenCard = () => (
-  <div className="specimen-card-wrapper">
-    <div className="specimen-tab">SPECIMEN NO. 04 — BEE-LINK GATEWAY</div>
-    <div className="specimen-card">
-      <div className="specimen-graphic">
-        <svg width="240" height="240" viewBox="0 0 240 240" fill="none">
-          {/* Hexagons background */}
-          <path d="M120 40 L160 63.09 L160 109.28 L120 132.37 L80 109.28 L80 63.09 Z" stroke="var(--border-color)" strokeWidth="2"/>
-          <path d="M120 132.37 L160 155.46 L160 201.65 L120 224.74 L80 201.65 L80 155.46 Z" stroke="var(--border-color)" strokeWidth="2"/>
-          {/* Radio waves */}
-          <path d="M70 100 A 30 30 0 0 0 70 140 M55 85 A 50 50 0 0 0 55 155" stroke="var(--color-honey-primary)" strokeWidth="2" strokeLinecap="round" />
-          <path d="M170 100 A 30 30 0 0 1 170 140 M185 85 A 50 50 0 0 1 185 155" stroke="var(--color-honey-primary)" strokeWidth="2" strokeLinecap="round" />
-          {/* Connectors */}
-          <path d="M30 115 L60 115 M180 115 L210 115" stroke="var(--border-color)" strokeWidth="2"/>
-          {/* Bee */}
-          <g transform="translate(120, 115) scale(2.5)">
-            <ellipse cx="0" cy="0" rx="6" ry="9" fill="#c67f3b" stroke="var(--color-text-primary)" strokeWidth="1.5" />
-            <path d="M-6 -2 h12 M-5.8 1 h11.6 M-6 4 h12" stroke="var(--color-text-primary)" strokeWidth="1.5" />
-            <circle cx="0" cy="-9" r="3" fill="var(--color-bg-dark)" stroke="var(--color-text-primary)" strokeWidth="1.5" />
-            <path d="M-2 -12 c-1 -2 -3 -1 -3 -1 M2 -12 c1 -2 3 -1 3 -1" stroke="var(--color-text-primary)" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M-6 -4 c-4 -3 -5 1 -4 4" stroke="var(--color-text-primary)" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M6 -4 c4 -3 5 1 4 4" stroke="var(--color-text-primary)" strokeWidth="1.5" strokeLinecap="round" />
-          </g>
-        </svg>
-        <div className="specimen-caption">
-          <h4>Sensing at 2-4 kHz</h4>
-          <p>ON-DEVICE • GOERTZEL FILTER</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 export default function Home() {
   const navigate = useNavigate();
