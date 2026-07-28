@@ -540,19 +540,13 @@
     ]
   },
   {
-    "id": "device WebDemo",
-    "name": "Live Web Demo (6s)",
+    "id": "device Demos",
+    "name": "Live Demos",
     "segments": [
       {
         "filename": "local_demo_6sec.mp3",
         "url": "/bee audio/device 008/09_02-07-2024_18-25-19 (1).mp3#t=0,6"
-      }
-    ]
-  },
-  {
-    "id": "device Categorized",
-    "name": "AI Category Demos",
-    "segments": [
+      },
       {
         "filename": "swarming_warning_demo.mp3",
         "url": "/bee audio/device 008/09_02-07-2024_18-25-19 (1).mp3#t=0,6"
