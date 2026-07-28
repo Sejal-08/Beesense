@@ -538,5 +538,15 @@
         "url": "/bee audio/device B0700/09_04-07-2024_07-19-21.mp3"
       }
     ]
+  },
+  {
+    "id": "device WebDemo",
+    "name": "Live Web Demo (6s)",
+    "segments": [
+      {
+        "filename": "Hummel_bee_6sec_demo.mp3",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Hummel_bee.mp3"
+      }
+    ]
   }
 ]
