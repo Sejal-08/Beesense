@@ -81,6 +81,40 @@ export default function Dashboard() {
     setAnalyzingFile(filename);
     
     setTimeout(() => {
+      // Hardcoded overrides for the specific AI Category Demos
+      const fn = filename.toLowerCase();
+      if (fn.includes('swarming')) {
+        setAiResult({ status: 'Pre-Swarming Warning', confidence: '96.4', frequency: 280, filename });
+        setAnalyzingFile(null);
+        return;
+      }
+      if (fn.includes('piping')) {
+        setAiResult({ status: 'Queen Piping Detected', confidence: '98.1', frequency: 400, filename });
+        setAnalyzingFile(null);
+        return;
+      }
+      if (fn.includes('quacking')) {
+        setAiResult({ status: 'Queen Quacking Detected', confidence: '94.5', frequency: 350, filename });
+        setAnalyzingFile(null);
+        return;
+      }
+      if (fn.includes('flying')) {
+        setAiResult({ status: 'Active Flying', confidence: '92.3', frequency: 220, filename });
+        setAnalyzingFile(null);
+        return;
+      }
+      if (fn.includes('foraging')) {
+        setAiResult({ status: 'Foraging Activity', confidence: '91.8', frequency: 200, filename });
+        setAnalyzingFile(null);
+        return;
+      }
+      if (fn.includes('buzz')) {
+        setAiResult({ status: 'Normal Fanning', confidence: '95.0', frequency: 180, filename });
+        setAnalyzingFile(null);
+        return;
+      }
+
+      // Default deterministic hash for all other normal files
       let hash = 0;
       for (let i = 0; i < filename.length; i++) {
         hash = filename.charCodeAt(i) + ((hash << 5) - hash);
