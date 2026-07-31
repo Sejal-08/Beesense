@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Hexagon, Activity, Waves, ArrowLeft, BrainCircuit, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import devicesData from '../data/devices.json';
-import annamLogo from '../assets/images/annam_ai_logo.jpg';
 import '../index.css';
 
 // Types
@@ -11,245 +9,234 @@ interface Segment {
   url: string;
 }
 
-interface Device {
+interface DeviceSummary {
   id: string;
-  name: string;
-  segments: Segment[];
+  lastActive: string;
 }
 
-// Utility: Date Parser
-const parseFilenameTime = (filename: string) => {
-  let match = filename.match(/_(\d{2}-\d{2}-\d{4})_(\d{2}-\d{2}-\d{2})/);
-  if (match) {
-    const [, dateStr, timeStr] = match;
-    const time = timeStr.split('-').slice(0, 2).join(':');
-    return { date: dateStr, time };
-  }
-  
-  match = filename.match(/(\d{4}-\d{2}-\d{2})--(\d{2}-\d{2}-\d{2})/);
-  if (match) {
-    const [, dateStr, timeStr] = match;
-    const time = timeStr.split('-').slice(0, 2).join(':');
-    return { date: dateStr, time };
-  }
-
-  return { date: 'Unknown', time: '00:00' };
-};
-
-// Utility: Metrics Generator
-const getMetrics = (filename: string) => {
-  let hash = 0;
-  for (let i = 0; i < filename.length; i++) {
-    hash = filename.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  hash = Math.abs(hash);
-  
-  const tempIn = (32 + (hash % 6) + (hash % 10) / 10).toFixed(1);
-  const humIn = 55 + (hash % 15);
-  
-  const tempOut = (22 + ((hash >> 2) % 10) + (hash % 10) / 10).toFixed(1);
-  const humOut = 45 + ((hash >> 2) % 25);
-  
-  return { tempIn, humIn, tempOut, humOut };
-};
-
-
+const API_GATEWAY_URL = 'https://qy0g6eet0g.execute-api.us-east-1.amazonaws.com/default/FetchBeeAudioAPI';
 
 export default function Dashboard() {
-  const devices = devicesData as Device[];
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [deviceList, setDeviceList] = useState<DeviceSummary[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null);
+  const [audioSegments, setAudioSegments] = useState<Segment[]>([]);
+  
+  const [loadingList, setLoadingList] = useState(true);
+  const [loadingAudio, setLoadingAudio] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
-  // Reset analysis when device changes
+  // 1. Fetch the master list of devices
+  const fetchDeviceList = async () => {
+    setLoadingList(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_GATEWAY_URL}?action=list_devices`);
+      if (!response.ok) throw new Error('Failed to fetch device list');
+      const data: DeviceSummary[] = await response.json();
+      setDeviceList(data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Waiting for AWS API Gateway configuration...");
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  // 2. Fetch audio for a specific device when clicked (or dates change)
+  const fetchDeviceAudio = async (deviceId: string) => {
+    setLoadingAudio(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('action', 'get_audio');
+      // Pass the raw ID (e.g. '22') by removing the 'device_' prefix if it exists
+      const rawId = deviceId.replace('device_', '');
+      params.append('device_id', rawId);
+      
+      if (startDate) params.append('start', startDate);
+      if (endDate) params.append('end', endDate);
+      
+      const response = await fetch(`${API_GATEWAY_URL}?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch audio');
+      
+      const data: Segment[] = await response.json();
+      setAudioSegments(data);
+    } catch (err: any) {
+      console.error(err);
+      // Fail silently for audio so it doesn't break the whole app, just shows empty
+      setAudioSegments([]);
+    } finally {
+      setLoadingAudio(false);
+    }
+  };
+
+  // Fetch device list immediately on load
   useEffect(() => {
-    setAiResult(null);
-    setAnalyzingFile(null);
-  }, [selectedDevice]);
+    fetchDeviceList();
+  }, []);
 
-  const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>, filename: string) => {
+  // Whenever the selected device or dates change, fetch that specific audio
+  useEffect(() => {
+    if (selectedDevice) {
+      fetchDeviceAudio(selectedDevice.id);
+    }
+  }, [selectedDevice, startDate, endDate]);
+
+  const handleDeviceClick = (device: DeviceSummary) => {
+    if (selectedDevice?.id !== device.id) {
+      setAudioSegments([]); // Clear old audio immediately
+      setSelectedDevice(device);
+    }
+  };
+
+  const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     const audios = document.getElementsByTagName('audio');
     for (let i = 0; i < audios.length; i++) {
       if (audios[i] !== e.currentTarget) {
         audios[i].pause();
       }
     }
-    
-    if (aiResult?.filename === filename || analyzingFile === filename) return;
-
-    setAiResult(null);
-    setAnalyzingFile(filename);
-    
-    setTimeout(() => {
-      // Hardcoded overrides for the specific AI Category Demos
-      const fn = filename.toLowerCase();
-      if (fn.includes('swarming')) {
-        setAiResult({ status: 'Pre-Swarming Warning', confidence: '96.4', frequency: 280, filename });
-        setAnalyzingFile(null);
-        return;
-      }
-      if (fn.includes('piping')) {
-        setAiResult({ status: 'Queen Piping Detected', confidence: '98.1', frequency: 400, filename });
-        setAnalyzingFile(null);
-        return;
-      }
-      if (fn.includes('quacking')) {
-        setAiResult({ status: 'Queen Quacking Detected', confidence: '94.5', frequency: 350, filename });
-        setAnalyzingFile(null);
-        return;
-      }
-      if (fn.includes('flying')) {
-        setAiResult({ status: 'Active Flying', confidence: '92.3', frequency: 220, filename });
-        setAnalyzingFile(null);
-        return;
-      }
-      if (fn.includes('foraging')) {
-        setAiResult({ status: 'Foraging Activity', confidence: '91.8', frequency: 200, filename });
-        setAnalyzingFile(null);
-        return;
-      }
-      if (fn.includes('buzz')) {
-        setAiResult({ status: 'Normal Fanning', confidence: '95.0', frequency: 180, filename });
-        setAnalyzingFile(null);
-        return;
-      }
-
-      // Default deterministic hash for all other normal files
-      let hash = 0;
-      for (let i = 0; i < filename.length; i++) {
-        hash = filename.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      hash = Math.abs(hash);
-      
-      const statuses = ["Healthy", "Normal Fanning", "Healthy", "Pre-Swarming Warning", "Healthy", "Queen Presence Confirmed", "Healthy"];
-      const status = statuses[hash % statuses.length];
-      const confidence = (91 + (hash % 8) + (hash % 10)/10).toFixed(1);
-      const frequency = 180 + (hash % 80);
-      
-      setAiResult({ status, confidence, frequency, filename });
-      setAnalyzingFile(null);
-    }, 1500);
   };
 
-  const chartData = selectedDevice?.segments.map(s => {
-    const timeInfo = parseFilenameTime(s.filename);
-    const metrics = getMetrics(s.filename);
-    
-    // Mask the recording year to make it look recent for the audit
-    const displayFilename = s.filename.replace(/2022|2023|2024/g, "2026");
-    
-    return {
-      ...timeInfo,
-      ...metrics,
-      filename: displayFilename,
-      originalFilename: s.filename,
-      url: s.url
-    };
-  }) || [];
+  const handleGlobalRefresh = () => {
+    fetchDeviceList();
+    if (selectedDevice) {
+      fetchDeviceAudio(selectedDevice.id);
+    }
+  };
 
   return (
-    <div className="app-container">
+    <div className="app-container honeycomb-bg">
       <aside className="sidebar">
-        <div className="sidebar-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '20px' }}>
-          <img src={annamLogo} alt="Annam AI" className="logo-dark-mode" style={{ height: '36px' }} />
+        <div className="sidebar-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Hexagon className="text-honey-primary" size={28} color="#c68a4d" />
-            <h1>Bee Audio Data</h1>
+            <Link to="/" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }} title="Back to Home">
+              <ArrowLeft size={24} />
+            </Link>
+            <Hexagon className="text-honey-primary" size={24} color="var(--color-honey-primary)" />
+            <h1 style={{ fontSize: '1.25rem', margin: 0 }}>Live Telemetry</h1>
           </div>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: 0, paddingLeft: '36px' }}>
+            Live Audio
+          </p>
         </div>
-        <div style={{ padding: '0 24px 24px 24px' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
-            <ArrowLeft size={16} /> Back to BeeSense Home
-          </Link>
-        </div>
+        
         <div className="device-list">
-          {devices.map((device) => (
-            <button
-              key={device.id}
-              className={`device-item ${selectedDevice?.id === device.id ? 'active' : ''}`}
-              onClick={() => setSelectedDevice(device)}
-            >
-              <Activity size={16} />
-              <span>{device.name}</span>
-            </button>
-          ))}
+          {loadingList ? (
+             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                <RefreshCw className="animate-spin" size={20} />
+             </div>
+          ) : deviceList.length > 0 ? (
+            deviceList.map((device) => (
+              <button
+                key={device.id}
+                className={`device-item ${selectedDevice?.id === device.id ? 'active' : ''}`}
+                onClick={() => handleDeviceClick(device)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                  <Activity size={16} />
+                  <span>Device {device.id.replace('device_', '')} (Live)</span>
+                </div>
+                {device.lastActive && (
+                  <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', paddingLeft: '24px' }}>
+                    Last Active: {device.lastActive}
+                  </span>
+                )}
+              </button>
+            ))
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+               No devices registered in database.
+            </div>
+          )}
+        </div>
+        
+        <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Start Date</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>End Date</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit' }} />
+          </div>
+          <button 
+            onClick={fetchDeviceList}
+            style={{ width: '100%', padding: '10px', background: 'var(--color-bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px' }}
+          >
+            <RefreshCw size={16} /> Refresh Devices
+          </button>
         </div>
       </aside>
 
       <main className="main-content">
-        {selectedDevice ? (
+        {error ? (
+          <div className="empty-state">
+            <AlertCircle size={64} color="#f59e0b" />
+            <h3>Connection Pending</h3>
+            <p>Please ensure the live data connection is configured properly.</p>
+          </div>
+        ) : !selectedDevice ? (
+          <div className="empty-state">
+            <Hexagon size={64} color="var(--color-honey-primary)" />
+            <h3>Select a Device</h3>
+            <p>Choose a device from the list to explore its recorded audio.</p>
+          </div>
+        ) : loadingAudio ? (
+          <div className="empty-state">
+            <RefreshCw className="animate-spin" size={64} color="var(--color-honey-primary)" style={{ animation: 'spin 1.5s linear infinite' }} />
+            <h3>Fetching Audio Files...</h3>
+            <p>Retrieving secure links from AWS...</p>
+          </div>
+        ) : (
           <>
-            <header className="content-header">
-              <div className="badge">+ SPECIMEN LOG • {selectedDevice.id.toUpperCase()}</div>
-              <h2>{selectedDevice.name} Audio Segments</h2>
-              <p>Explore the recorded acoustic data for {selectedDevice.id}. Select a segment below to listen.</p>
+            <header className="content-header" style={{ position: 'relative' }}>
+              <div className="badge" style={{ background: '#10b98122', color: '#10b981', border: '1px solid #10b98155', display: 'inline-block' }}>
+                + LIVE STREAM • {selectedDevice.id.toUpperCase()}
+              </div>
+              
+              <button 
+                onClick={handleGlobalRefresh}
+                className="glass-panel-hover"
+                style={{ position: 'absolute', top: '12px', right: '12px', padding: '10px', background: 'var(--color-bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Refresh All Data"
+              >
+                <RefreshCw size={18} />
+              </button>
+
+              <h2 style={{ marginTop: '12px' }}>Device {selectedDevice.id.replace('device_', '')} Audio Log</h2>
+              <p>Explore the live acoustic data for {selectedDevice.id}. Select a segment below to listen.</p>
             </header>
             
             <div className="dashboard-scroll-area">
-              
-              {/* AI Analysis Panel (Mocked for Audit) */}
-              {(analyzingFile || aiResult) && (
-                <div style={{ backgroundColor: 'var(--color-bg-panel)', padding: '24px', borderRadius: '12px', border: '1px solid var(--color-honey-primary)', marginBottom: '32px', boxShadow: '0 8px 32px rgba(198, 138, 77, 0.1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-                    <BrainCircuit color="var(--color-honey-primary)" size={24} />
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-honey-primary)', letterSpacing: '1px' }}>AI ACOUSTIC ANALYSIS</h3>
-                    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
-                      {analyzingFile || aiResult?.filename}
-                    </span>
-                  </div>
-                  
-                  {analyzingFile ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '32px 0', color: 'var(--color-text-secondary)' }}>
-                      <Loader2 className="animate-spin" size={24} color="var(--color-honey-primary)" style={{ animation: 'spin 1s linear infinite' }} />
-                      <span style={{ fontWeight: 500, letterSpacing: '1px' }}>Analyzing audio data...</span>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Colony Status</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 700, color: aiResult.status.includes('Warning') ? '#ef4444' : '#10b981' }}>
-                          {aiResult.status.includes('Warning') ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
-                          {aiResult.status}
+              <div className="audio-cards-grid">
+                {audioSegments.length > 0 ? (
+                  audioSegments.map((data, idx) => (
+                    <div key={idx} className="audio-card-slim glass-panel glass-panel-hover">
+                      <div className="audio-card-slim-header">
+                        <span className="audio-filename">{data.filename.split('/').pop()}</span>
+                        <div className="audio-wave-icon">
+                          <Waves size={14} />
                         </div>
                       </div>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Confidence Score</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{aiResult.confidence}%</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Dominant Frequency</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{aiResult.frequency} Hz</div>
+                      <div className="audio-player-slim">
+                        <audio controls src={data.url} onPlay={handlePlay} />
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
-
-              <div className="section-title-sm">+ RECORDED SEGMENTS</div>
-              
-              <div className="audio-cards-grid">
-                {chartData.map((data, idx) => (
-                  <div key={idx} className="audio-card-slim">
-                    <div className="audio-card-slim-header">
-                      <span className="audio-filename">{data.filename}</span>
-                      <div className="audio-wave-icon">
-                        <Waves size={14} />
-                      </div>
-                    </div>
-                    <div className="audio-player-slim">
-                      <audio controls src={data.url} onPlay={(e) => handlePlay(e, data.filename)} />
-                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: 'var(--color-text-muted)', padding: '20px' }}>
+                    {startDate || endDate 
+                      ? "No audio recordings were found for the selected date range."
+                      : "No audio segments found for this device yet."}
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </>
-        ) : (
-          <div className="empty-state">
-            <Hexagon size={64} color="var(--color-honey-primary)" />
-            <h3>Select a device to view audio data</h3>
-            <p>Choose one of the devices from the sidebar to explore the recorded bee sounds.</p>
-          </div>
         )}
       </main>
     </div>

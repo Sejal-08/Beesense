@@ -155,6 +155,102 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Applications and Benefits Section */}
+      <section id="applications" className="features-section apps-section-dark">
+        <div className="section-header">
+          <h2 className="section-title" style={{ fontSize: '2.8rem', maxWidth: '800px', margin: '0 auto 16px' }}>Built for every scale,<br/>from the <em>whole field</em> to one hive.</h2>
+          <p className="section-subtitle" style={{ maxWidth: '700px', margin: '0 auto 48px', fontSize: '1.05rem', lineHeight: '1.6' }}>
+            The same acoustic signal that tracks a single colony's health scales to a<br/>
+            dashboard for thousands — so every beekeeper, from backyard to<br/>
+            broadacre, only shows up when it matters.
+          </p>
+        </div>
+
+        <div className="hex-grid">
+          {/* Card 01 */}
+          <div className="hex-card">
+            <span className="card-number">01</span>
+            <div className="hex-icon-wrapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <h3>Commercial Apiaries</h3>
+            <p>Watch thousands of hives from one dashboard. <strong>Dispatch a beekeeper only when the AI flags a swarm risk</strong> — not on a fixed inspection schedule.</p>
+          </div>
+
+          {/* Card 02 */}
+          <div className="hex-card">
+            <span className="card-number">02</span>
+            <div className="hex-icon-wrapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </div>
+            <h3>Precision Agriculture</h3>
+            <p>Track foraging-activity indexes through bloom season so pollination hits its peak — and every acre gets covered <strong>right when it counts</strong>.</p>
+          </div>
+          
+          {/* Card 03 */}
+          <div className="hex-card">
+            <span className="card-number">03</span>
+            <div className="hex-icon-wrapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <h3>Prevent Swarming</h3>
+            <p>Catch the queen's acoustic "piping" and "quacking" days before a swarm. <strong>Step in early</strong> instead of losing half the colony overnight.</p>
+          </div>
+
+          {/* Card 04 */}
+          <div className="hex-card">
+            <span className="card-number">04</span>
+            <div className="hex-icon-wrapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="M4.93 4.93l1.41 1.41" />
+                <path d="M17.66 17.66l1.41 1.41" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+                <path d="M6.34 17.66l-1.41 1.41" />
+                <path d="M19.07 4.93l-1.41 1.41" />
+              </svg>
+            </div>
+            <h3>Reduce Labor Costs</h3>
+            <p>Stop opening healthy hives just to check on them. Let the AI listen around the clock and <strong>only call your crew out for real anomalies</strong>.</p>
+          </div>
+
+          {/* Card 05 */}
+          <div className="hex-card">
+            <span className="card-number">05</span>
+            <div className="hex-icon-wrapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
+              </svg>
+            </div>
+            <h3>Maximize Honey Yield</h3>
+            <p>Read raw foraging activity straight from the hive's sound. <strong>Know the exact moment the nectar flow peaks</strong> and act on it.</p>
+          </div>
+
+          {/* Card 06 */}
+          <div className="hex-card">
+            <span className="card-number">06</span>
+            <div className="hex-icon-wrapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h3>Biosecurity & Pest Control</h3>
+            <p>Recognize the chaotic acoustic signature of a wasp attack, hornet raid, or parasite outbreak — <strong>before the colony collapses</strong>.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Core Capabilities Section */}
       <section id="capabilities" className="features-section">
         <div className="section-header">
@@ -269,6 +365,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      
 
       <footer className="home-footer">
         <p>© BeeSense Apiary Systems. All rights reserved.</p>

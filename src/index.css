@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 html {
   scroll-behavior: smooth;
@@ -25,59 +25,63 @@ html[data-theme="dark"] .logo-dark-mode {
 }
 
 :root {
-  --color-bg-dark: #151412; /* Dark olive/brown background */
-  --color-bg-panel: #1a1917;
-  --color-bg-hover: #22201d;
+  --color-bg-dark: #0f1115; /* Deep obsidian/charcoal */
+  --color-bg-panel: rgba(26, 29, 36, 0.6);
+  --color-bg-hover: rgba(36, 40, 50, 0.8);
   
-  --color-honey-primary: #c68a4d; /* Brighter golden brown for dark mode */
-  --color-honey-light: #d9aa75;
-  --color-honey-dark: #b47333;
+  --color-honey-primary: #F59E0B; /* Vibrant Amber */
+  --color-honey-light: #FCD34D;
+  --color-honey-dark: #B45309;
   
-  --color-tech-primary: #c96752; /* Brighter rusty red */
-  --color-tech-light: #c96752;
+  --color-tech-primary: #10B981; /* Emerald Green for Healthy status */
+  --color-tech-light: #34D399;
   
-  --color-text-primary: #f4f1e1; /* Cream text */
-  --color-text-secondary: #b8b3a5;
-  --color-text-muted: #8c877a;
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  --color-text-muted: #9CA3AF;
   
-  --border-color: #38342f; /* Subtle dark border */
+  --border-color: rgba(245, 158, 11, 0.15); /* Amber tinted subtle border */
+  --border-glow: rgba(245, 158, 11, 0.4);
   
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
+  --border-radius-sm: 6px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
   
-  --shadow-glow: none;
-  --shadow-glow-tech: none;
-  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 15px rgba(245, 158, 11, 0.15);
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
   
-  --transition-fast: 0.2s ease;
-  --transition-normal: 0.3s ease;
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="light"] {
-  --color-bg-dark: #f4f1e1; /* Cream background */
-  --color-bg-panel: #ebe7d9;
-  --color-bg-hover: #e3decd;
+  --color-bg-dark: #F9FAFB; 
+  --color-bg-panel: rgba(255, 255, 255, 0.7);
+  --color-bg-hover: rgba(255, 255, 255, 0.9);
   
-  --color-honey-primary: #b47333; /* Golden brown */
-  --color-honey-light: #c68a4d;
-  --color-honey-dark: #915a24;
+  --color-honey-primary: #D97706; 
+  --color-honey-light: #F59E0B;
+  --color-honey-dark: #92400E;
   
-  --color-tech-primary: #b74f38; /* Rusty red */
-  --color-tech-light: #c96752;
+  --color-tech-primary: #059669; 
+  --color-tech-light: #10B981;
   
-  --color-text-primary: #2d2a26; /* Dark earthy brown */
-  --color-text-secondary: #4a453e;
-  --color-text-muted: #736b60;
+  --color-text-primary: #111827; 
+  --color-text-secondary: #374151;
+  --color-text-muted: #6B7280;
   
-  --border-color: #d6cfbf;
+  --border-color: rgba(217, 119, 6, 0.2);
+  --border-glow: rgba(217, 119, 6, 0.4);
 }
 
-/* Glassmorphism Utilities Removed, replaced with solid */
+/* Glassmorphism Utilities */
 .glass-panel {
   background: var(--color-bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-panel);
 }
 
 .glass-panel-hover {
@@ -86,8 +90,17 @@ html[data-theme="dark"] .logo-dark-mode {
 
 .glass-panel-hover:hover {
   background: var(--color-bg-hover);
-  border-color: var(--color-honey-primary);
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-glow);
   transform: translateY(-2px);
+}
+
+/* Premium Honeycomb Background */
+.honeycomb-bg {
+  background-color: var(--color-bg-dark);
+  background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
 }
 
 * {
@@ -97,7 +110,7 @@ html[data-theme="dark"] .logo-dark-mode {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   background-color: var(--color-bg-dark);
   color: var(--color-text-primary);
   line-height: 1.6;
