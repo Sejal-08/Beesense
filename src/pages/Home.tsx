@@ -1,15 +1,14 @@
-import { ArrowRight, ArrowDown, ActivitySquare, BarChart3, Shield, Hexagon } from 'lucide-react';
+import { ArrowRight, ActivitySquare, BarChart3, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
-import deployment3 from '../assets/images/3.jpeg';
 import deployment7 from '../assets/images/7.jpeg';
 import annamLogo from '../assets/images/annam_ai_logo.jpg';
 import heroBee from '../assets/images/hero_bee.jpg';
 import heroFlower1 from '../assets/images/hero_flower1.jpg';
 import heroFlower2 from '../assets/images/hero_flower2.jpg';
 
-import TransparentImage from '../components/TransparentImage';
+
 
 const BeeIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '4px' }}>
