@@ -294,8 +294,8 @@ export default function Home() {
                 <line x1="16" x2="14" y1="3" y2="21" />
               </svg>
             </div>
-            <h3>Edge Frequency Analysis</h3>
-            <p>Utilizes the Goertzel Algorithm on-device to filter background noise, saving battery and transmitting only validated bee acoustics.</p>
+            <h3>Smart Audio Processing</h3>
+            <p>Utilizes advanced on-device edge processing to filter background noise, saving battery and transmitting only validated bee acoustics.</p>
           </div>
 
           <div className="feature-card">
@@ -354,8 +354,8 @@ export default function Home() {
                     <td>Digital Microphone (8/16 kHz, 16-bit Mono)</td>
                   </tr>
                   <tr>
-                    <td>Edge Processing</td>
-                    <td>Goertzel Algorithm filtering</td>
+                    <th>On-board Processing</th>
+                    <td>Edge processing filtering</td>
                   </tr>
                   <tr>
                     <td>Environmental Sensors</td>
