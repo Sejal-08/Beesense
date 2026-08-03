@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, CheckCircle, Thermometer, Droplets, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../index.css';
 
@@ -14,12 +14,34 @@ interface DeviceSummary {
   lastActive: string;
 }
 
+interface HiveInsights {
+  overall_status?: string;
+  health_score?: number;
+  swarm_risk?: string;
+  queen_status?: string;
+  foraging_activity?: string;
+  disturbance_detected?: string;
+  alert_severity?: string;
+  inspection_recommendation?: string;
+  temperature?: number;
+  humidity?: number;
+  rms_energy?: number;
+  zcr?: number;
+  spectral_centroid?: number;
+  peak_frequency?: number;
+  spectral_bandwidth?: number;
+  spectral_entropy?: number;
+  spectrogram_url?: string;
+}
+
 const API_GATEWAY_URL = 'https://qy0g6eet0g.execute-api.us-east-1.amazonaws.com/default/FetchBeeAudioAPI';
 
 export default function Dashboard() {
   const [deviceList, setDeviceList] = useState<DeviceSummary[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null);
   const [audioSegments, setAudioSegments] = useState<Segment[]>([]);
+  const [insights, setInsights] = useState<HiveInsights | null>(null);
+  const [allMetrics, setAllMetrics] = useState<any[]>([]);
   
   const [loadingList, setLoadingList] = useState(true);
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -46,16 +68,46 @@ export default function Dashboard() {
     }
   };
 
-  // 2. Fetch audio for a specific device when clicked (or dates change)
-  const fetchDeviceAudio = async (deviceId: string) => {
+  // 2. Fetch audio and mock insights for a specific device
+  const fetchDeviceData = async (deviceId: string) => {
     setLoadingAudio(true);
+    
+    // Fetch live acoustic metrics from DynamoDB via API Gateway
+    const METRICS_API_URL = 'https://pymedugo4e.execute-api.us-east-1.amazonaws.com/';
+    const url = new URL(METRICS_API_URL);
+    url.searchParams.append('device_id', deviceId.replace('device_', ''));
+    if (startDate) url.searchParams.append('start', startDate);
+    if (endDate) url.searchParams.append('end', endDate);
+
+    fetch(url.toString())
+      .then(res => res.json())
+      .then(data => {
+        // Data is now an array of all timestamps for the selected dates!
+        if (Array.isArray(data) && data.length > 0) {
+          setAllMetrics(data);
+          const latest = data[0]; // Grab the most recent entry for the banner
+          if (latest.features) {
+            setInsights({
+              // Real telemetry straight from DynamoDB!
+              rms_energy: latest.features.rms_energy,
+              zcr: latest.features.zcr,
+              spectral_centroid: latest.features.spectral_centroid,
+              peak_frequency: latest.features.peak_frequency,
+              spectral_bandwidth: latest.features.spectral_bandwidth,
+              spectral_entropy: latest.features.spectral_entropy
+            });
+          }
+        } else {
+          setInsights(null);
+        }
+      })
+      .catch(err => console.error("Error fetching metrics:", err));
+
     try {
       const params = new URLSearchParams();
       params.append('action', 'get_audio');
-      // Pass the raw ID (e.g. '22') by removing the 'device_' prefix if it exists
       const rawId = deviceId.replace('device_', '');
       params.append('device_id', rawId);
-      
       if (startDate) params.append('start', startDate);
       if (endDate) params.append('end', endDate);
       
@@ -66,52 +118,77 @@ export default function Dashboard() {
       setAudioSegments(data);
     } catch (err: any) {
       console.error(err);
-      // Fail silently for audio so it doesn't break the whole app, just shows empty
       setAudioSegments([]);
     } finally {
       setLoadingAudio(false);
     }
   };
 
-  // Fetch device list immediately on load
   useEffect(() => {
     fetchDeviceList();
   }, []);
 
-  // Whenever the selected device or dates change, fetch that specific audio
   useEffect(() => {
     if (selectedDevice) {
-      fetchDeviceAudio(selectedDevice.id);
+      fetchDeviceData(selectedDevice.id);
     }
   }, [selectedDevice, startDate, endDate]);
 
   const handleDeviceClick = (device: DeviceSummary) => {
     if (selectedDevice?.id !== device.id) {
-      setAudioSegments([]); // Clear old audio immediately
+      setAudioSegments([]); 
+      setInsights(null);
       setSelectedDevice(device);
     }
   };
 
-  const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+  const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>, segment: Segment) => {
     const audios = document.getElementsByTagName('audio');
     for (let i = 0; i < audios.length; i++) {
       if (audios[i] !== e.currentTarget) {
         audios[i].pause();
       }
     }
+    
+    // Extract timestamp from the filename to match with DynamoDB 'timestamp'
+    // e.g., "audio_2026-08-03_15-43-12.wav" -> "2026-08-03 15:43:12"
+    const filenameOnly = segment.filename.split('/').pop() || '';
+    const rawTimeStr = filenameOnly.replace('audio_', '').replace('.wav', '');
+    let formattedTimestamp = '';
+    if (rawTimeStr.includes('_')) {
+      const [datePart, timePart] = rawTimeStr.split('_');
+      formattedTimestamp = `${datePart} ${timePart.replace(/-/g, ':')}`;
+    } else {
+      formattedTimestamp = rawTimeStr;
+    }
+    
+    // Find the specific metrics for this audio file
+    const matchedMetric = allMetrics.find(m => m.timestamp === formattedTimestamp || m.s3_key === segment.filename);
+    
+    if (matchedMetric && matchedMetric.features) {
+      setInsights({
+        rms_energy: matchedMetric.features.rms_energy,
+        zcr: matchedMetric.features.zcr,
+        spectral_centroid: matchedMetric.features.spectral_centroid,
+        peak_frequency: matchedMetric.features.peak_frequency,
+        spectral_bandwidth: matchedMetric.features.spectral_bandwidth,
+        spectral_entropy: matchedMetric.features.spectral_entropy
+      });
+    } else {
+      console.log("No matching metric found for timestamp:", formattedTimestamp, "or s3_key:", segment.filename);
+    }
   };
 
   const handleGlobalRefresh = () => {
     fetchDeviceList();
     if (selectedDevice) {
-      fetchDeviceAudio(selectedDevice.id);
+      fetchDeviceData(selectedDevice.id);
     }
   };
 
   const isDeviceActive = (lastActive?: string) => {
     if (!lastActive) return false;
     try {
-      // Parse 'YYYY-MM-DD HH:MM:SS' as UTC by replacing space with T and appending Z
       const dateStr = lastActive.includes(' ') ? lastActive.replace(' ', 'T') + 'Z' : lastActive;
       const lastActiveDate = new Date(dateStr);
       const now = new Date();
@@ -173,13 +250,15 @@ export default function Dashboard() {
         </div>
         
         <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Start Date</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit' }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>End Date</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit' }} />
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Start Date</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit', width: '100%' }} />
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>End Date</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit', width: '100%' }} />
+            </div>
           </div>
           <button 
             onClick={fetchDeviceList}
@@ -201,19 +280,19 @@ export default function Dashboard() {
           <div className="empty-state">
             <Hexagon size={64} color="var(--color-honey-primary)" />
             <h3>Select a Device</h3>
-            <p>Choose a device from the list to explore its recorded audio.</p>
+            <p>Choose a device from the list to explore AI insights and acoustic data.</p>
           </div>
         ) : loadingAudio ? (
           <div className="empty-state">
             <RefreshCw className="animate-spin" size={64} color="var(--color-honey-primary)" style={{ animation: 'spin 1.5s linear infinite' }} />
-            <h3>Fetching Audio Files...</h3>
-            <p>Retrieving secure links from AWS...</p>
+            <h3>Analyzing Acoustic Data...</h3>
+            <p>Extracting Mel Spectrograms and generating AI insights.</p>
           </div>
         ) : (
           <>
             <header className="content-header" style={{ position: 'relative' }}>
               <div className="badge" style={{ background: '#10b98122', color: '#10b981', border: '1px solid #10b98155', display: 'inline-block' }}>
-                + LIVE STREAM • {selectedDevice.id.toUpperCase()}
+                + AI ANALYSIS • {selectedDevice.id.toUpperCase()}
               </div>
               
               <button 
@@ -225,11 +304,53 @@ export default function Dashboard() {
                 <RefreshCw size={18} />
               </button>
 
-              <h2 style={{ marginTop: '12px' }}>Device {selectedDevice.id.replace('device_', '')} Audio Log</h2>
-              <p>Explore the live acoustic data for {selectedDevice.id}. Select a segment below to listen.</p>
+              <h2 style={{ marginTop: '12px' }}>Device {selectedDevice.id.replace('device_', '')} AI Insights</h2>
+              
+              {/* --- TECHNICAL ACOUSTICS (STATIC) --- */}
+              {insights && (
+                <div style={{ marginTop: '24px' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Activity size={18} /> Technical Acoustics
+                  </h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
+                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>RMS Energy</span>
+                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.rms_energy ? insights.rms_energy.toFixed(4) : '0'}</span>
+                     </div>
+                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Zero Crossing</span>
+                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.zcr ? insights.zcr.toFixed(5) : '0'}</span>
+                     </div>
+                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Spectral Centroid</span>
+                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.spectral_centroid ? insights.spectral_centroid.toFixed(1) : '0'}<span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: '4px', fontWeight: '400'}}>Hz</span></span>
+                     </div>
+                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Peak Frequency</span>
+                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.peak_frequency ? insights.peak_frequency.toFixed(1) : '0'}<span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: '4px', fontWeight: '400'}}>Hz</span></span>
+                     </div>
+                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Bandwidth</span>
+                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.spectral_bandwidth ? insights.spectral_bandwidth.toFixed(1) : '0'}<span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: '4px', fontWeight: '400'}}>Hz</span></span>
+                     </div>
+                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Entropy</span>
+                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.spectral_entropy ? insights.spectral_entropy.toFixed(3) : '0'}</span>
+                     </div>
+                  </div>
+                </div>
+              )}
             </header>
             
             <div className="dashboard-scroll-area">
+                           {/* --- AI INSIGHTS BANNER --- */}
+              {/* Removed until Step 5 (PyTorch Model) is implemented */}
+
+              {/* --- RAW AUDIO FILES --- */}
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Waves size={18} /> Raw Audio Recordings
+              </h3>
               <div className="audio-cards-grid">
                 {audioSegments.length > 0 ? (
                   audioSegments.map((data, idx) => (
@@ -241,14 +362,14 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="audio-player-slim">
-                        <audio controls src={data.url} onPlay={handlePlay} />
+                        <audio controls src={data.url} onPlay={(e) => handlePlay(e, data)} />
                       </div>
                     </div>
                   ))
                 ) : (
                   <div style={{ 
                     color: 'var(--color-text-muted)', 
-                    padding: '60px 20px', 
+                    padding: '40px 20px', 
                     textAlign: 'center',
                     gridColumn: '1 / -1',
                     display: 'flex',
