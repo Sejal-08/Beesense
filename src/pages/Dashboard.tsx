@@ -25,8 +25,9 @@ export default function Dashboard() {
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState<string>(today);
+  const [endDate, setEndDate] = useState<string>(today);
 
   // 1. Fetch the master list of devices
   const fetchDeviceList = async () => {
@@ -107,6 +108,20 @@ export default function Dashboard() {
     }
   };
 
+  const isDeviceActive = (lastActive?: string) => {
+    if (!lastActive) return false;
+    try {
+      // Parse 'YYYY-MM-DD HH:MM:SS' as UTC by replacing space with T and appending Z
+      const dateStr = lastActive.includes(' ') ? lastActive.replace(' ', 'T') + 'Z' : lastActive;
+      const lastActiveDate = new Date(dateStr);
+      const now = new Date();
+      const diffHours = (now.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60);
+      return diffHours <= 24;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="app-container honeycomb-bg">
       <aside className="sidebar">
@@ -129,24 +144,27 @@ export default function Dashboard() {
                 <RefreshCw className="animate-spin" size={20} />
              </div>
           ) : deviceList.length > 0 ? (
-            deviceList.map((device) => (
-              <button
-                key={device.id}
-                className={`device-item ${selectedDevice?.id === device.id ? 'active' : ''}`}
-                onClick={() => handleDeviceClick(device)}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                  <Activity size={16} />
-                  <span>Device {device.id.replace('device_', '')} (Live)</span>
-                </div>
-                {device.lastActive && (
-                  <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', paddingLeft: '24px' }}>
-                    Last Active: {device.lastActive}
-                  </span>
-                )}
-              </button>
-            ))
+            deviceList.map((device) => {
+              const active = isDeviceActive(device.lastActive);
+              return (
+                <button
+                  key={device.id}
+                  className={`device-item ${selectedDevice?.id === device.id ? 'active' : ''}`}
+                  onClick={() => handleDeviceClick(device)}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', color: active ? 'inherit' : 'var(--color-text-muted)' }}>
+                    <Activity size={16} color={active ? '#10b981' : '#6b7280'} />
+                    <span>Device {device.id.replace('device_', '')} {active ? '(Live)' : '(Inactive)'}</span>
+                  </div>
+                  {device.lastActive && (
+                    <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', paddingLeft: '24px' }}>
+                      Last Active: {device.lastActive}
+                    </span>
+                  )}
+                </button>
+              );
+            })
           ) : (
             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                No devices registered in database.
@@ -228,9 +246,21 @@ export default function Dashboard() {
                     </div>
                   ))
                 ) : (
-                  <div style={{ color: 'var(--color-text-muted)', padding: '20px' }}>
+                  <div style={{ 
+                    color: 'var(--color-text-muted)', 
+                    padding: '60px 20px', 
+                    textAlign: 'center',
+                    gridColumn: '1 / -1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <div style={{ background: 'rgba(0,0,0,0.1)', padding: '24px', borderRadius: '50%', marginBottom: '16px' }}>
+                      <Waves size={32} opacity={0.5} />
+                    </div>
                     {startDate || endDate 
-                      ? "No audio recordings were found for the selected date range."
+                      ? `No audio recordings found for the selected date range (${startDate} to ${endDate}).`
                       : "No audio segments found for this device yet."}
                   </div>
                 )}
