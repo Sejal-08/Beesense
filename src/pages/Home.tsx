@@ -1,11 +1,14 @@
-import { ArrowRight, ActivitySquare, BarChart3, Shield } from 'lucide-react';
+import { ArrowRight, ArrowDown, ActivitySquare, BarChart3, Shield, Hexagon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
 import deployment3 from '../assets/images/3.jpeg';
 import deployment7 from '../assets/images/7.jpeg';
 import annamLogo from '../assets/images/annam_ai_logo.jpg';
-import ThemeToggle from '../components/ThemeToggle';
+import heroBee from '../assets/images/hero_bee.jpg';
+import heroFlower1 from '../assets/images/hero_flower1.jpg';
+import heroFlower2 from '../assets/images/hero_flower2.jpg';
+
 import TransparentImage from '../components/TransparentImage';
 
 const BeeIcon = () => (
@@ -28,13 +31,13 @@ export default function Home() {
       {/* Navigation */}
       <nav className="home-nav">
         <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src={annamLogo} alt="Annam AI" className="logo-dark-mode" style={{ height: '36px' }} />
+          <img src={annamLogo} alt="Annam AI" style={{ height: '36px' }} />
           <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
           <BeeIcon />
           <span>BeeSense</span>
         </div>
         <div className="nav-actions">
-          <ThemeToggle />
+
           <button className="nav-cta" onClick={() => navigate('/dashboard')}>
             Live Data <ArrowRight size={18} />
           </button>
@@ -78,8 +81,19 @@ export default function Home() {
             View live dashboard <ArrowRight size={18} />
           </button>
         </div>
-        <div className="hero-visual">
-          <TransparentImage src={deployment3} alt="BeeSense Sensor" className="hero-device-img" />
+        
+        <div className="hero-hex-grid-container">
+          <div className="hex-grid-inner">
+            <div className="hex-image-wrapper hex-top">
+              <img src={heroBee} alt="Bee in flight" className="hex-image" />
+            </div>
+            <div className="hex-image-wrapper hex-bottom-left">
+              <img src={heroFlower1} alt="Pink Aster" className="hex-image" />
+            </div>
+            <div className="hex-image-wrapper hex-bottom-right">
+              <img src={heroFlower2} alt="Purple Flower" className="hex-image" />
+            </div>
+          </div>
         </div>
       </section>
 
