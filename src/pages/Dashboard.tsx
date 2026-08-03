@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, CheckCircle, Thermometer, Droplets, Info } from 'lucide-react';
+import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../index.css';
 
