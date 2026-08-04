@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../index.css';
 
@@ -94,7 +94,11 @@ export default function Dashboard() {
               spectral_centroid: latest.features.spectral_centroid,
               peak_frequency: latest.features.peak_frequency,
               spectral_bandwidth: latest.features.spectral_bandwidth,
-              spectral_entropy: latest.features.spectral_entropy
+              spectral_entropy: latest.features.spectral_entropy,
+              // AI Insights
+              overall_status: latest.insights?.overall_status,
+              alert_severity: latest.insights?.alert_severity,
+              inspection_recommendation: latest.insights?.inspection_recommendation
             });
           }
         } else {
@@ -172,7 +176,10 @@ export default function Dashboard() {
         spectral_centroid: matchedMetric.features.spectral_centroid,
         peak_frequency: matchedMetric.features.peak_frequency,
         spectral_bandwidth: matchedMetric.features.spectral_bandwidth,
-        spectral_entropy: matchedMetric.features.spectral_entropy
+        spectral_entropy: matchedMetric.features.spectral_entropy,
+        overall_status: matchedMetric.insights?.overall_status,
+        alert_severity: matchedMetric.insights?.alert_severity,
+        inspection_recommendation: matchedMetric.insights?.inspection_recommendation
       });
     } else {
       console.log("No matching metric found for timestamp:", formattedTimestamp, "or s3_key:", segment.filename);
@@ -345,7 +352,60 @@ export default function Dashboard() {
             
             <div className="dashboard-scroll-area">
                            {/* --- AI INSIGHTS BANNER --- */}
-              {/* Removed until Step 5 (PyTorch Model) is implemented */}
+              {insights && insights.overall_status && (
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{
+                    padding: '20px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '16px',
+                    background: insights.overall_status === 'No Bee Detected' ? 'rgba(107, 114, 128, 0.1)' : 
+                                insights.alert_severity === 'Critical' ? 'rgba(239, 68, 68, 0.1)' : 
+                                insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? 'rgba(245, 158, 11, 0.1)' : 
+                                'rgba(16, 185, 129, 0.1)',
+                    border: `1px solid ${
+                                insights.overall_status === 'No Bee Detected' ? 'rgba(107, 114, 128, 0.3)' : 
+                                insights.alert_severity === 'Critical' ? 'rgba(239, 68, 68, 0.3)' : 
+                                insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? 'rgba(245, 158, 11, 0.3)' : 
+                                'rgba(16, 185, 129, 0.3)'
+                    }`
+                  }}>
+                    <div style={{
+                      padding: '12px',
+                      borderRadius: '50%',
+                      background: insights.overall_status === 'No Bee Detected' ? 'rgba(107, 114, 128, 0.2)' : 
+                                  insights.alert_severity === 'Critical' ? 'rgba(239, 68, 68, 0.2)' : 
+                                  insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 
+                                  'rgba(16, 185, 129, 0.2)',
+                      color: insights.overall_status === 'No Bee Detected' ? '#9ca3af' : 
+                             insights.alert_severity === 'Critical' ? '#ef4444' : 
+                             insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? '#f59e0b' : 
+                             '#10b981'
+                    }}>
+                      {insights.overall_status === 'No Bee Detected' ? <Info size={28} /> : 
+                       insights.alert_severity === 'Critical' ? <AlertTriangle size={28} /> : 
+                       insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? <AlertCircle size={28} /> : 
+                       <CheckCircle size={28} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ 
+                        margin: '0 0 4px 0', 
+                        fontSize: '1.25rem',
+                        color: insights.overall_status === 'No Bee Detected' ? '#9ca3af' : 
+                               insights.alert_severity === 'Critical' ? '#ef4444' : 
+                               insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? '#f59e0b' : 
+                               '#10b981'
+                      }}>
+                        {insights.overall_status}
+                      </h3>
+                      <p style={{ margin: 0, color: 'var(--color-text-primary)', fontSize: '0.95rem' }}>
+                        {insights.inspection_recommendation}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* --- RAW AUDIO FILES --- */}
               <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
