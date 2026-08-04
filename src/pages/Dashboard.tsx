@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Hexagon, Activity, Waves, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../index.css';
 
@@ -98,7 +98,11 @@ export default function Dashboard() {
               // AI Insights
               overall_status: latest.insights?.overall_status,
               alert_severity: latest.insights?.alert_severity,
-              inspection_recommendation: latest.insights?.inspection_recommendation
+              inspection_recommendation: latest.insights?.inspection_recommendation,
+              queen_status: latest.insights?.queen_status,
+              health_score: latest.insights?.health_score,
+              swarm_risk: latest.insights?.swarm_risk,
+              foraging_activity: latest.insights?.foraging_activity
             });
           }
         } else {
@@ -179,7 +183,11 @@ export default function Dashboard() {
         spectral_entropy: matchedMetric.features.spectral_entropy,
         overall_status: matchedMetric.insights?.overall_status,
         alert_severity: matchedMetric.insights?.alert_severity,
-        inspection_recommendation: matchedMetric.insights?.inspection_recommendation
+        inspection_recommendation: matchedMetric.insights?.inspection_recommendation,
+        queen_status: matchedMetric.insights?.queen_status,
+        health_score: matchedMetric.insights?.health_score,
+        swarm_risk: matchedMetric.insights?.swarm_risk,
+        foraging_activity: matchedMetric.insights?.foraging_activity
       });
     } else {
       console.log("No matching metric found for timestamp:", formattedTimestamp, "or s3_key:", segment.filename);
@@ -200,7 +208,7 @@ export default function Dashboard() {
       const lastActiveDate = new Date(dateStr);
       const now = new Date();
       const diffHours = (now.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60);
-      return diffHours <= 24;
+      return diffHours <= 6;
     } catch {
       return false;
     }
@@ -305,146 +313,173 @@ export default function Dashboard() {
               <button 
                 onClick={handleGlobalRefresh}
                 className="glass-panel-hover"
-                style={{ position: 'absolute', top: '12px', right: '12px', padding: '10px', background: 'var(--color-bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ position: 'absolute', top: '12px', right: '12px', padding: '10px', background: 'transparent', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 title="Refresh All Data"
               >
                 <RefreshCw size={18} />
               </button>
 
-              <h2 style={{ marginTop: '12px' }}>Device {selectedDevice.id.replace('device_', '')} AI Insights</h2>
+              <h2 style={{ marginTop: '12px', fontFamily: '"Georgia", serif', fontSize: '2.5rem', fontWeight: 400 }}>Device {selectedDevice.id.replace('device_', '')} AI insights</h2>
               
-              {/* --- TECHNICAL ACOUSTICS (STATIC) --- */}
-              {insights && (
-                <div style={{ marginTop: '24px' }}>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Activity size={18} /> Technical Acoustics
-                  </h3>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
-                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>RMS Energy</span>
-                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.rms_energy ? insights.rms_energy.toFixed(4) : '0'}</span>
-                     </div>
-                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Zero Crossing</span>
-                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.zcr ? insights.zcr.toFixed(5) : '0'}</span>
-                     </div>
-                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Spectral Centroid</span>
-                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.spectral_centroid ? insights.spectral_centroid.toFixed(1) : '0'}<span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: '4px', fontWeight: '400'}}>Hz</span></span>
-                     </div>
-                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Peak Frequency</span>
-                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.peak_frequency ? insights.peak_frequency.toFixed(1) : '0'}<span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: '4px', fontWeight: '400'}}>Hz</span></span>
-                     </div>
-                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Bandwidth</span>
-                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.spectral_bandwidth ? insights.spectral_bandwidth.toFixed(1) : '0'}<span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: '4px', fontWeight: '400'}}>Hz</span></span>
-                     </div>
-                     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                       <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '1px', fontWeight: '600' }}>Entropy</span>
-                       <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)'}}>{insights.spectral_entropy ? insights.spectral_entropy.toFixed(3) : '0'}</span>
-                     </div>
-                  </div>
-                </div>
-              )}
-            </header>
-            
-            <div className="dashboard-scroll-area">
-                           {/* --- AI INSIGHTS BANNER --- */}
+              {/* --- AI INSIGHTS BANNER --- */}
               {insights && insights.overall_status && (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{ marginTop: '20px', marginBottom: '8px' }}>
                   <div style={{
-                    padding: '20px',
-                    borderRadius: '12px',
+                    padding: '16px 20px',
+                    borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '16px',
-                    background: insights.overall_status === 'No Bee Detected' ? 'rgba(107, 114, 128, 0.1)' : 
-                                insights.alert_severity === 'Critical' ? 'rgba(239, 68, 68, 0.1)' : 
-                                insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? 'rgba(245, 158, 11, 0.1)' : 
-                                'rgba(16, 185, 129, 0.1)',
-                    border: `1px solid ${
-                                insights.overall_status === 'No Bee Detected' ? 'rgba(107, 114, 128, 0.3)' : 
-                                insights.alert_severity === 'Critical' ? 'rgba(239, 68, 68, 0.3)' : 
-                                insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? 'rgba(245, 158, 11, 0.3)' : 
-                                'rgba(16, 185, 129, 0.3)'
-                    }`
+                    gap: '12px',
+                    background: (insights.overall_status.includes('No Significant') || insights.overall_status.includes('No Bee')) ? '#eadba8' : '#e0f2e9',
+                    border: `1px solid ${(insights.overall_status.includes('No Significant') || insights.overall_status.includes('No Bee')) ? '#cca82b' : '#86cfa7'}`,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                   }}>
                     <div style={{
-                      padding: '12px',
-                      borderRadius: '50%',
-                      background: insights.overall_status === 'No Bee Detected' ? 'rgba(107, 114, 128, 0.2)' : 
-                                  insights.alert_severity === 'Critical' ? 'rgba(239, 68, 68, 0.2)' : 
-                                  insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 
-                                  'rgba(16, 185, 129, 0.2)',
-                      color: insights.overall_status === 'No Bee Detected' ? '#9ca3af' : 
-                             insights.alert_severity === 'Critical' ? '#ef4444' : 
-                             insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? '#f59e0b' : 
-                             '#10b981'
+                      color: (insights.overall_status.includes('No Significant') || insights.overall_status.includes('No Bee')) ? '#876906' : '#1e8449',
+                      marginTop: '2px'
                     }}>
-                      {insights.overall_status === 'No Bee Detected' ? <Info size={28} /> : 
-                       insights.alert_severity === 'Critical' ? <AlertTriangle size={28} /> : 
-                       insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? <AlertCircle size={28} /> : 
-                       <CheckCircle size={28} />}
+                      {(insights.overall_status.includes('No Significant') || insights.overall_status.includes('No Bee')) ? <AlertTriangle size={18} /> : <CheckCircle size={18} />}
                     </div>
                     <div style={{ flex: 1 }}>
                       <h3 style={{ 
                         margin: '0 0 4px 0', 
-                        fontSize: '1.25rem',
-                        color: insights.overall_status === 'No Bee Detected' ? '#9ca3af' : 
-                               insights.alert_severity === 'Critical' ? '#ef4444' : 
-                               insights.alert_severity === 'High' || insights.alert_severity === 'Medium' ? '#f59e0b' : 
-                               '#10b981'
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        color: (insights.overall_status.includes('No Significant') || insights.overall_status.includes('No Bee')) ? '#6b5305' : '#0f4224'
                       }}>
-                        {insights.overall_status}
+                        {insights.overall_status.replace('⚠ ', '').replace('✅ ', '').replace('🟢 ', '').replace('🟡 ', '').replace('🔴 ', '')}
                       </h3>
-                      <p style={{ margin: 0, color: 'var(--color-text-primary)', fontSize: '0.95rem' }}>
-                        {insights.inspection_recommendation}
-                      </p>
+                      {insights.inspection_recommendation && (
+                        <p style={{ margin: 0, color: (insights.overall_status.includes('No Significant') || insights.overall_status.includes('No Bee')) ? '#6b5305' : '#196b3a', fontSize: '0.9rem' }}>
+                          {insights.inspection_recommendation}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
+              
+            </header>
+            <div className="content-divider" style={{ margin: '0 48px' }}></div>
+            
+            <div className="dashboard-scroll-area">
 
-              {/* --- RAW AUDIO FILES --- */}
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Waves size={18} /> Raw Audio Recordings
-              </h3>
-              <div className="audio-cards-grid">
-                {audioSegments.length > 0 ? (
-                  audioSegments.map((data, idx) => (
-                    <div key={idx} className="audio-card-slim glass-panel glass-panel-hover">
-                      <div className="audio-card-slim-header">
-                        <span className="audio-filename">{data.filename.split('/').pop()}</span>
-                        <div className="audio-wave-icon">
-                          <Waves size={14} />
+              <div className="dashboard-split-view">
+                
+                {/* --- LEFT COLUMN: INSIGHTS --- */}
+                <div className="insights-column">
+                  
+                  {/* HEALTH DIAGNOSTICS */}
+                  {insights && insights.health_score !== undefined && (
+                    <div style={{ marginBottom: '48px' }}>
+                      <div className="section-title-clean">HEALTH DIAGNOSTICS</div>
+                      <div className="insight-panel">
+                        <div className="insight-list">
+                          <div className="insight-list-item">
+                            <span className="insight-label">Hive health score</span>
+                            <span className="insight-value">{insights.health_score === 0 ? '--' : insights.health_score}</span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Queen status</span>
+                            <span className="insight-value" style={{ color: insights.queen_status === 'Absent' ? '#ef4444' : 'inherit' }}>{insights.queen_status === 'N/A' ? 'Not detected' : (insights.queen_status || '--')}</span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Alert severity</span>
+                            <span className="insight-value" style={{ color: insights.alert_severity === 'High' ? '#ef4444' : 'inherit' }}>{insights.alert_severity === 'None' ? 'No alert' : (insights.alert_severity || '--')}</span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Swarm risk</span>
+                            <span className="insight-value" style={{ color: insights.swarm_risk === 'High' ? '#ef4444' : 'inherit' }}>{insights.swarm_risk === 'N/A' ? '--' : (insights.swarm_risk || '--')}</span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Foraging activity</span>
+                            <span className="insight-value">{insights.foraging_activity === 'N/A' ? '--' : (insights.foraging_activity || '--')}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="audio-player-slim">
-                        <audio controls src={data.url} onPlay={(e) => handlePlay(e, data)} />
+                    </div>
+                  )}
+
+                  {/* TECHNICAL ACOUSTICS */}
+                  {insights && (
+                    <div>
+                      <div className="section-title-clean">TECHNICAL ACOUSTICS</div>
+                      <div className="insight-panel">
+                        <div className="insight-list">
+                          <div className="insight-list-item">
+                            <span className="insight-label">RMS energy</span>
+                            <span className="insight-value">{insights.rms_energy ? insights.rms_energy.toFixed(4) : '0'}</span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Zero crossing</span>
+                            <span className="insight-value">{insights.zcr ? insights.zcr.toFixed(5) : '0'}</span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Spectral centroid</span>
+                            <span className="insight-value">{insights.spectral_centroid ? insights.spectral_centroid.toFixed(1) : '0'} <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>Hz</span></span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Peak frequency</span>
+                            <span className="insight-value">{insights.peak_frequency ? insights.peak_frequency.toFixed(1) : '0'} <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>Hz</span></span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Bandwidth</span>
+                            <span className="insight-value">{insights.spectral_bandwidth ? insights.spectral_bandwidth.toFixed(1) : '0'} <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>Hz</span></span>
+                          </div>
+                          <div className="insight-list-item">
+                            <span className="insight-label">Entropy</span>
+                            <span className="insight-value">{insights.spectral_entropy ? insights.spectral_entropy.toFixed(3) : '0'}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div style={{ 
-                    color: 'var(--color-text-muted)', 
-                    padding: '40px 20px', 
-                    textAlign: 'center',
-                    gridColumn: '1 / -1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <div style={{ background: 'rgba(0,0,0,0.1)', padding: '24px', borderRadius: '50%', marginBottom: '16px' }}>
-                      <Waves size={32} opacity={0.5} />
-                    </div>
-                    {startDate || endDate 
-                      ? `No audio recordings found for the selected date range (${startDate} to ${endDate}).`
-                      : "No audio segments found for this device yet."}
+                  )}
+                </div>
+
+                {/* --- RIGHT COLUMN: AUDIO --- */}
+                <div className="audio-column">
+                  <div className="section-title-clean">
+                    <span>AUDIO RECORDINGS</span>
+                    <span style={{ fontWeight: 400, textTransform: 'none' }}>{audioSegments.length} clips</span>
                   </div>
-                )}
+                  
+                  <div className="audio-cards-grid">
+                    {audioSegments.length > 0 ? (
+                      (() => {
+                        const grouped: Record<string, typeof audioSegments> = {};
+                        audioSegments.forEach(data => {
+                          const dateMatch = data.filename.match(/\d{4}-\d{2}-\d{2}/);
+                          const datePart = dateMatch ? dateMatch[0] : 'Unknown'; 
+                          const dateLabel = datePart.length > 5 ? datePart.substring(5) : datePart;
+                          
+                          if (!grouped[dateLabel]) grouped[dateLabel] = [];
+                          grouped[dateLabel].push(data);
+                        });
+
+                        return Object.entries(grouped).map(([dateLabel, segments]) => (
+                          <div key={dateLabel} style={{ marginBottom: '24px' }}>
+                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace' }}>
+                              {dateLabel}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              {segments.map((data, idx) => (
+                                <div key={idx} className="audio-card-minimal">
+                                  <span className="audio-filename">{data.filename.split('_').pop()}</span>
+                                  <audio controls src={data.url} onPlay={(e) => handlePlay(e, data)} style={{ flex: 1, height: '32px' }} />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()
+                    ) : (
+                      <div style={{ color: 'var(--color-text-muted)', padding: '40px 20px', textAlign: 'center' }}>
+                        No audio segments found.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
           </>

@@ -424,6 +424,8 @@ audio::-webkit-media-controls-time-remaining-display {
 
 
 
+
+
 /* --- DASHBOARD REDESIGN --- */
 .dashboard-top-bar {
   position: absolute;
@@ -505,9 +507,9 @@ audio::-webkit-media-controls-time-remaining-display {
 }
 
 .audio-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .audio-card-slim {
@@ -552,4 +554,140 @@ audio::-webkit-media-controls-time-remaining-display {
 
 .audio-player-slim audio::-webkit-media-controls-panel {
   background-color: transparent;
+}
+
+/* --- SPLIT VIEW REDESIGN --- */
+.dashboard-split-view {
+  display: grid;
+  grid-template-columns: minmax(320px, 40%) 1fr;
+  gap: 0; /* gap handled by padding */
+  align-items: start;
+}
+
+.insights-column {
+  padding-right: 48px;
+  min-width: 0;
+  position: sticky;
+  top: 32px;
+}
+
+.audio-column {
+  border-left: 1px solid rgba(39, 99, 38, 0.15);
+  padding-left: 48px;
+  min-width: 0; /* prevents intrinsic audio width from overflowing grid */
+}
+
+/* Divider line between header and main content */
+.content-divider {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(39, 99, 38, 0.15);
+  margin-top: 16px;
+  margin-bottom: 32px;
+}
+
+.insight-panel {
+  background-color: rgba(242, 245, 227, 0.7);
+  border-radius: 12px;
+  padding: 0 20px;
+}
+
+.insight-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.insight-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed rgba(39, 99, 38, 0.15);
+}
+
+.insight-list-item:last-child {
+  border-bottom: none;
+}
+
+.insight-label {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.insight-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: right;
+}
+
+.section-title-clean {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+/* Redesign audio cards to be extremely slim and flat */
+.audio-card-minimal {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: rgba(242, 245, 227, 0.5); /* subtle bg */
+  border-radius: var(--border-radius-sm);
+  transition: background 0.2s;
+}
+
+.audio-card-minimal:hover {
+  background: rgba(242, 245, 227, 0.9);
+}
+
+.audio-card-minimal .audio-filename {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+  min-width: 100px;
+}
+
+.audio-card-minimal audio {
+  flex: 1;
+  height: 30px;
+}
+
+.audio-card-minimal .play-btn-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-honey-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-split-view {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .insights-column {
+    position: static !important;
+    padding-right: 0 !important;
+    border-bottom: 1px solid rgba(39, 99, 38, 0.15);
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+  }
+
+  .audio-column {
+    padding-left: 0 !important;
+    border-left: none !important;
+  }
 }
