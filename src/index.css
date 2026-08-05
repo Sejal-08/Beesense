@@ -451,7 +451,9 @@ audio::-webkit-media-controls-time-remaining-display {
 
 .dashboard-scroll-area {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   padding: 0 48px 48px;
 }
 
@@ -558,23 +560,41 @@ audio::-webkit-media-controls-time-remaining-display {
 
 /* --- SPLIT VIEW REDESIGN --- */
 .dashboard-split-view {
+  flex: 1;
   display: grid;
   grid-template-columns: minmax(320px, 40%) 1fr;
-  gap: 0; /* gap handled by padding */
-  align-items: start;
+  gap: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .insights-column {
   padding-right: 48px;
   min-width: 0;
-  position: sticky;
-  top: 32px;
+  height: 100%;
+  overflow-y: auto;
+}
+.insights-column::-webkit-scrollbar {
+  width: 6px;
+}
+.insights-column::-webkit-scrollbar-thumb {
+  background-color: rgba(245, 158, 11, 0.2);
+  border-radius: 10px;
 }
 
 .audio-column {
   border-left: 1px solid rgba(39, 99, 38, 0.15);
   padding-left: 48px;
-  min-width: 0; /* prevents intrinsic audio width from overflowing grid */
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+.audio-column::-webkit-scrollbar {
+  width: 6px;
+}
+.audio-column::-webkit-scrollbar-thumb {
+  background-color: rgba(245, 158, 11, 0.2);
+  border-radius: 10px;
 }
 
 /* Divider line between header and main content */
@@ -674,8 +694,15 @@ audio::-webkit-media-controls-time-remaining-display {
 }
 
 @media (max-width: 1200px) {
+  .dashboard-scroll-area {
+    overflow-y: auto !important;
+    display: block !important;
+  }
+  
   .dashboard-split-view {
     grid-template-columns: 1fr !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   
   .insights-column {
@@ -684,10 +711,14 @@ audio::-webkit-media-controls-time-remaining-display {
     border-bottom: 1px solid rgba(39, 99, 38, 0.15);
     padding-bottom: 32px;
     margin-bottom: 32px;
+    height: auto !important;
+    overflow-y: visible !important;
   }
 
   .audio-column {
     padding-left: 0 !important;
     border-left: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
   }
 }

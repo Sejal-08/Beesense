@@ -306,9 +306,6 @@ export default function Dashboard() {
         ) : (
           <>
             <header className="content-header" style={{ position: 'relative' }}>
-              <div className="badge" style={{ background: '#10b98122', color: '#10b981', border: '1px solid #10b98155', display: 'inline-block' }}>
-                + AI ANALYSIS • {selectedDevice.id.toUpperCase()}
-              </div>
               
               <button 
                 onClick={handleGlobalRefresh}
