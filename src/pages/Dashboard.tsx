@@ -313,6 +313,14 @@ export default function Dashboard() {
             <h3>Analyzing Acoustic Data...</h3>
             <p>Extracting Mel Spectrograms and generating AI insights.</p>
           </div>
+        ) : audioSegments.length === 0 ? (
+          <div className="empty-state">
+            <div className="animate-float">
+              <BeeIcon color="var(--color-text-main)" size={64} />
+            </div>
+            <h3>No Data Available</h3>
+            <p>No audio data recorded on this day for the selected device.</p>
+          </div>
         ) : (
           <>
             <header className="content-header" style={{ position: 'relative' }}>
@@ -451,42 +459,33 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="audio-cards-grid">
-                    {audioSegments.length > 0 ? (
-                      (() => {
-                        const grouped: Record<string, typeof audioSegments> = {};
-                        audioSegments.forEach(data => {
-                          const dateMatch = data.filename.match(/\d{4}-\d{2}-\d{2}/);
-                          const datePart = dateMatch ? dateMatch[0] : 'Unknown'; 
-                          const dateLabel = datePart.length > 5 ? datePart.substring(5) : datePart;
-                          
-                          if (!grouped[dateLabel]) grouped[dateLabel] = [];
-                          grouped[dateLabel].push(data);
-                        });
+                    {(() => {
+                      const grouped: Record<string, typeof audioSegments> = {};
+                      audioSegments.forEach(data => {
+                        const dateMatch = data.filename.match(/\d{4}-\d{2}-\d{2}/);
+                        const datePart = dateMatch ? dateMatch[0] : 'Unknown'; 
+                        const dateLabel = datePart.length > 5 ? datePart.substring(5) : datePart;
+                        
+                        if (!grouped[dateLabel]) grouped[dateLabel] = [];
+                        grouped[dateLabel].push(data);
+                      });
 
-                        return Object.entries(grouped).map(([dateLabel, segments]) => (
-                          <div key={dateLabel} style={{ marginBottom: '24px' }}>
-                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace' }}>
-                              {dateLabel}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              {segments.map((data, idx) => (
-                                <div key={idx} className="audio-card-minimal">
-                                  <span className="audio-filename">{data.filename.split('_').pop()}</span>
-                                  <audio controls src={data.url} onPlay={(e) => handlePlay(e, data)} style={{ flex: 1, height: '32px' }} />
-                                </div>
-                              ))}
-                            </div>
+                      return Object.entries(grouped).map(([dateLabel, segments]) => (
+                        <div key={dateLabel} style={{ marginBottom: '24px' }}>
+                          <div style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace' }}>
+                            {dateLabel}
                           </div>
-                        ));
-                      })()
-                    ) : (
-                      <div style={{ color: 'var(--color-text-muted)', padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                        <div className="animate-float">
-                          <BeeIcon color="var(--color-text-muted)" size={48} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {segments.map((data, idx) => (
+                              <div key={idx} className="audio-card-minimal">
+                                <span className="audio-filename">{data.filename.split('_').pop()}</span>
+                                <audio controls src={data.url} onPlay={(e) => handlePlay(e, data)} style={{ flex: 1, height: '32px' }} />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <p style={{ margin: 0 }}>No audio data recorded on this day.</p>
-                      </div>
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
 
