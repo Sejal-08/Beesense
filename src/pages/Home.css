@@ -5,7 +5,8 @@
   background-color: transparent;
   color: var(--color-text-primary);
   font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
+  overflow: clip;
+  padding-top: 64px;
 }
 
 /* Navigation */
@@ -13,16 +14,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 5%;
+  padding: 10px 5%;
   width: 100%;
-  position: sticky;
+  position: fixed;
   top: 0;
   z-index: 1000;
-  background: var(--color-bg-panel);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: none;
+  background: #243528;
+  border-bottom: 1px solid rgba(223, 206, 159, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: all var(--transition-normal);
 }
 
@@ -33,7 +32,7 @@
   font-size: 1.75rem;
   font-family: 'Georgia', serif;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: #dfce9f;
 }
 
 .logo svg {
@@ -48,26 +47,22 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--color-tech-primary);
-  color: var(--color-bg-panel);
-  border: 1px solid var(--color-tech-primary);
+  background: #dfce9f;
+  color: #243528;
+  border: none;
   padding: 10px 24px;
   border-radius: 50px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all var(--transition-normal);
   letter-spacing: 0.5px;
-  white-space: nowrap;
-  text-transform: uppercase;
 }
 
 .nav-cta:hover {
-  background: var(--color-text-primary);
-  border-color: var(--color-text-primary);
-  color: var(--color-bg-panel);
+  background: #ebdcaa;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(39, 99, 38, 0.2);
+  box-shadow: 0 4px 12px rgba(223, 206, 159, 0.3);
 }
 
 /* Hero Section */
@@ -414,12 +409,37 @@
 
 /* Footer */
 .home-footer {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-muted);
-  border-top: 1px solid var(--border-color);
-  margin-top: 60px;
+  background: #243528; /* Match the dark forest green background */
+  padding: 16px 5%;
+  margin-top: 64px;
 }
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-brand {
+  font-family: 'Consolas', 'Courier New', monospace;
+  color: #dfce9f; /* Match the pale gold text color */
+  font-size: 1rem;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.footer-contact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #dfce9f;
+  font-size: 0.85rem;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+
 
 /* Section Header for subtitle layout */
 .section-header {
@@ -910,11 +930,11 @@
   }
 
   .home-nav {
-    padding: 16px 5%;
-    flex-direction: column;
-    justify-content: center;
+    padding: 12px 5%;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
   }
   
   .logo {
@@ -936,10 +956,8 @@
   }
 
   .nav-cta {
-    padding: 10px 24px;
-    font-size: 0.9rem;
-    width: 100%;
-    justify-content: center;
+    padding: 8px 16px;
+    font-size: 0.8rem;
   }
 }
 
@@ -988,6 +1006,16 @@
     min-width: 0;
     justify-content: center;
     padding: 10px 16px;
+  }
+  
+  .footer-container {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .footer-contact {
+    justify-content: center;
   }
 }
 

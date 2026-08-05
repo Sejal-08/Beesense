@@ -1,5 +1,5 @@
 import { ArrowRight, ActivitySquare, BarChart3, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
 import deployment7 from '../assets/images/7.jpeg';
@@ -30,13 +30,10 @@ export default function Home() {
       {/* Navigation */}
       <nav className="home-nav">
         <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src={annamLogo} alt="Annam AI" style={{ height: '36px' }} />
-          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
           <BeeIcon />
           <span>BeeSense</span>
         </div>
         <div className="nav-actions">
-
           <button className="nav-cta" onClick={() => navigate('/dashboard')}>
             Live Data <ArrowRight size={18} />
           </button>
@@ -382,7 +379,14 @@ export default function Home() {
       
 
       <footer className="home-footer">
-        <p>© BeeSense Apiary Systems. All rights reserved.</p>
+        <div className="footer-container">
+          <span className="footer-brand">BEESENSE</span>
+          <div className="footer-contact">
+            <span>hello@beesense.com</span>
+            <span style={{ opacity: 0.5 }}>|</span>
+            <span>Seattle, WA</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
