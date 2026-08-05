@@ -1,9 +1,9 @@
 import { ArrowRight, ActivitySquare, BarChart3, Shield } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
 import deployment7 from '../assets/images/7.jpeg';
-import annamLogo from '../assets/images/annam_ai_logo.jpg';
+
 import heroBee from '../assets/images/hero_bee.jpg';
 import heroFlower1 from '../assets/images/hero_flower1.jpg';
 import heroFlower2 from '../assets/images/hero_flower2.jpg';
