@@ -384,7 +384,7 @@ export default function Home() {
           <div className="footer-contact">
             <span>hello@beesense.com</span>
             <span style={{ opacity: 0.5 }}>|</span>
-            <span>Seattle, WA</span>
+            <span>IIT Ropar</span>
           </div>
         </div>
       </footer>
