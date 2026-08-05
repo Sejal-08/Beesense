@@ -3,6 +3,17 @@ import { Hexagon, Activity, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, Ch
 import { Link } from 'react-router-dom';
 import '../index.css';
 
+const BeeIcon = ({ size = 32, color = "currentColor", className = "", style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={{ color, ...style }}>
+    <ellipse cx="12" cy="14" rx="5" ry="7" fill="#d97706" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M7.5 12.5 h9 M7.2 15 h9.6 M7.5 17.5 h9" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="7" r="2.5" fill="var(--color-bg-panel, transparent)" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M10.5 5 c-1 -2 -3 -1 -3 -1 M13.5 5 c1 -2 3 -1 3 -1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M7 11 c-3 -2 -4 1 -3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M17 11 c3 -2 4 1 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
 // Types
 interface Segment {
   filename: string;
@@ -222,12 +233,9 @@ export default function Dashboard() {
             <Link to="/" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }} title="Back to Home">
               <ArrowLeft size={24} />
             </Link>
-            <Hexagon className="text-honey-primary" size={24} color="var(--color-honey-primary)" />
+            <BeeIcon color="var(--color-text-main)" size={28} />
             <h1 style={{ fontSize: '1.25rem', margin: 0 }}>Live Telemetry</h1>
           </div>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: 0, paddingLeft: '36px' }}>
-            Live Audio
-          </p>
         </div>
         
         <div className="device-list">
@@ -293,7 +301,9 @@ export default function Dashboard() {
           </div>
         ) : !selectedDevice ? (
           <div className="empty-state">
-            <Hexagon size={64} color="var(--color-honey-primary)" />
+            <div className="animate-float">
+              <BeeIcon color="var(--color-text-main)" size={64} />
+            </div>
             <h3>Select a Device</h3>
             <p>Choose a device from the list to explore AI insights and acoustic data.</p>
           </div>
@@ -470,8 +480,11 @@ export default function Dashboard() {
                         ));
                       })()
                     ) : (
-                      <div style={{ color: 'var(--color-text-muted)', padding: '40px 20px', textAlign: 'center' }}>
-                        No audio segments found.
+                      <div style={{ color: 'var(--color-text-muted)', padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div className="animate-float">
+                          <BeeIcon color="var(--color-text-muted)" size={48} />
+                        </div>
+                        <p style={{ margin: 0 }}>No audio data recorded on this day.</p>
                       </div>
                     )}
                   </div>
