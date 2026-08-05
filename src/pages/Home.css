@@ -133,6 +133,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  max-width: 480px;
   gap: 16px;
   margin-bottom: 48px;
 }
@@ -895,6 +896,10 @@
     align-items: center;
   }
   
+  .hero-stats {
+    justify-content: center;
+  }
+  
   .hero-subtitle {
     text-align: center;
   }
@@ -979,9 +984,10 @@
   }
   
   .stat-item {
-    width: 100%;
+    width: auto;
     min-width: 0;
     justify-content: center;
+    padding: 10px 16px;
   }
 }
 

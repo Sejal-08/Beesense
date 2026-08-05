@@ -61,17 +61,17 @@ export default function Home() {
               </div>
             </div>
             <div className="stat-item">
-              <ActivitySquare className="stat-icon" size={20} />
-              <div>
-                <span className="stat-value">Always listening</span>
-                <span className="stat-label">24/7 CAPTURE</span>
-              </div>
-            </div>
-            <div className="stat-item">
               <BarChart3 className="stat-icon" size={20} />
               <div>
                 <span className="stat-value">Early detection</span>
                 <span className="stat-label">DAYS OF LEAD TIME</span>
+              </div>
+            </div>
+            <div className="stat-item">
+              <ActivitySquare className="stat-icon" size={20} />
+              <div>
+                <span className="stat-value">Always listening</span>
+                <span className="stat-label">24/7 CAPTURE</span>
               </div>
             </div>
           </div>
