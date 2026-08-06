@@ -1,4 +1,5 @@
-import { ArrowRight, ActivitySquare, BarChart3, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowRight, ActivitySquare, BarChart3, Shield, Mic, Cpu, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
@@ -24,6 +25,90 @@ const BeeIcon = () => (
 
 export default function Home() {
   const navigate = useNavigate();
+  const [audioMode, setAudioMode] = useState('healthy');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+
+  // Auto-stop playing after a few seconds to simulate an audio clip
+  useEffect(() => {
+    let timeout: any;
+    if (isPlaying) {
+      timeout = setTimeout(() => {
+        setIsPlaying(false);
+        if (audioContext) {
+          audioContext.close();
+          setAudioContext(null);
+        }
+      }, 4000); // play for 4 seconds
+    }
+    return () => {
+      clearTimeout(timeout);
+      if (audioContext && !isPlaying) {
+        audioContext.close();
+      }
+    };
+  }, [isPlaying, audioContext]);
+
+  const generateBeeSound = (mode: string) => {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    setAudioContext(ctx);
+    
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    
+    // Bee buzz is a complex wave, sawtooth is a good approximation
+    oscillator.type = 'sawtooth';
+    
+    // Low-pass filter to muffle the harsh synth sound into a softer hum
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, ctx.currentTime);
+    
+    if (mode === 'healthy') {
+      oscillator.frequency.setValueAtTime(180, ctx.currentTime); // Low, steady hum
+    } else if (mode === 'swarming') {
+      oscillator.frequency.setValueAtTime(260, ctx.currentTime); // Higher pitch, rising
+      oscillator.frequency.linearRampToValueAtTime(300, ctx.currentTime + 4);
+    } else if (mode === 'queenless') {
+      oscillator.frequency.setValueAtTime(350, ctx.currentTime); // High, distressed pitch
+      // Add a slight wobble (vibrato) for distress
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 5;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 10;
+      lfo.connect(lfoGain);
+      lfoGain.connect(oscillator.frequency);
+      lfo.start();
+    }
+    
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Set volume and fade out
+    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.8);
+    
+    oscillator.start();
+  };
+
+  const handlePlay = (mode: string) => {
+    setAudioMode(mode);
+    // Don't auto play when just switching modes, let them click play
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      if (audioContext) {
+        audioContext.close();
+        setAudioContext(null);
+      }
+    } else {
+      setIsPlaying(true);
+      generateBeeSound(audioMode);
+    }
+  };
 
   return (
     <div className="home-container">
@@ -88,6 +173,58 @@ export default function Home() {
             </div>
             <div className="hex-image-wrapper hex-bottom-right">
               <img src={heroFlower2} alt="Purple Flower" className="hex-image" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works Section */}
+      <section className="how-it-works-section">
+        <div className="hiw-container">
+          <div className="section-header">
+            <h2 className="section-title">How <em>BeeSense</em> Works</h2>
+            <p className="section-subtitle">A seamless pipeline from the physical hive to your digital dashboard.</p>
+          </div>
+
+          <div className="hiw-flow">
+            <div className="hiw-step">
+              <div className="hiw-icon-wrapper">
+                <Mic size={32} />
+              </div>
+              <div className="hiw-content">
+                <h3>1. Acoustic Capture</h3>
+                <p>Hardware records continuous hive acoustics directly from the comb.</p>
+              </div>
+            </div>
+
+            <div className="hiw-connector">
+              <div className="connector-line"></div>
+              <ArrowRight className="connector-arrow" size={24} />
+            </div>
+
+            <div className="hiw-step">
+              <div className="hiw-icon-wrapper">
+                <Cpu size={32} />
+              </div>
+              <div className="hiw-content">
+                <h3>2. Cloud ML Analysis</h3>
+                <p>Raw audio is streamed to our AWS backend where AI models classify the acoustic signatures.</p>
+              </div>
+            </div>
+
+            <div className="hiw-connector">
+              <div className="connector-line"></div>
+              <ArrowRight className="connector-arrow" size={24} />
+            </div>
+
+            <div className="hiw-step">
+              <div className="hiw-icon-wrapper">
+                <LayoutDashboard size={32} />
+              </div>
+              <div className="hiw-content">
+                <h3>3. Actionable Insights</h3>
+                <p>Alerts for swarming, stress, or queen loss are sent to your dashboard.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -165,11 +302,85 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Interactive Audio Section */}
+      <section className="interactive-audio-section">
+        <div className="audio-container">
+          <div className="audio-header">
+            <h2>Listen to the Hive</h2>
+            <p>Experience how BeeSense translates raw acoustics into actionable health data.</p>
+          </div>
+          
+          <div className="audio-interactive-panel">
+            <div className="audio-controls">
+              <button 
+                className={`audio-btn ${audioMode === 'healthy' ? 'active' : ''}`}
+                onClick={() => handlePlay('healthy')}
+              >
+                <div className="btn-icon">✓</div>
+                <div className="btn-text">
+                  <strong>Healthy Hive</strong>
+                  <span>Normal foraging activity</span>
+                </div>
+              </button>
+              
+              <button 
+                className={`audio-btn ${audioMode === 'swarming' ? 'active' : ''}`}
+                onClick={() => handlePlay('swarming')}
+              >
+                <div className="btn-icon">!</div>
+                <div className="btn-text">
+                  <strong>Swarm Prep</strong>
+                  <span>Pre-flight pitch rising</span>
+                </div>
+              </button>
+              
+              <button 
+                className={`audio-btn ${audioMode === 'queenless' ? 'active' : ''}`}
+                onClick={() => handlePlay('queenless')}
+              >
+                <div className="btn-icon">✕</div>
+                <div className="btn-text">
+                  <strong>Queenless</strong>
+                  <span>High-frequency distress</span>
+                </div>
+              </button>
+            </div>
+            
+            <div className="audio-visualizer-box">
+              <div className="visualizer-screen">
+                <div className={`waveform-container ${isPlaying ? 'playing' : ''}`}>
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <div key={i} className="waveform-bar" style={{ animationDelay: `${i * 0.05}s` }}></div>
+                  ))}
+                </div>
+                
+                <div className="ai-analysis-overlay">
+                  <div className="analysis-status">
+                    {isPlaying ? 'ANALYZING...' : 'AI CLASSIFICATION'}
+                  </div>
+                  <div className={`analysis-result ${audioMode}`}>
+                    {audioMode === 'healthy' && 'STATUS: OPTIMAL (98%)'}
+                    {audioMode === 'swarming' && 'ALERT: SWARMING (94%)'}
+                    {audioMode === 'queenless' && 'WARNING: QUEENLESS (89%)'}
+                  </div>
+                </div>
+              </div>
+              <button 
+                className={`master-play-btn ${isPlaying ? 'playing' : ''}`}
+                onClick={togglePlay}
+              >
+                {isPlaying ? '■ STOP' : '▶ PLAY SIMULATION'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Applications and Benefits Section */}
       <section id="applications" className="features-section apps-section-dark">
         <div className="section-header">
           <h2 className="section-title" style={{ fontSize: '2.8rem', maxWidth: '800px', margin: '0 auto 16px' }}>Built for every scale,<br/>from the <em>whole field</em> to one hive.</h2>
-          <p className="section-subtitle" style={{ maxWidth: '700px', margin: '0 auto 48px', fontSize: '1.05rem', lineHeight: '1.6' }}>
+          <p className="section-subtitle" style={{ maxWidth: '700px', margin: '0 auto 16px', fontSize: '1.05rem', lineHeight: '1.6' }}>
             The same acoustic signal that tracks a single colony's health scales to a<br/>
             dashboard for thousands — so every beekeeper, from backyard to<br/>
             broadacre, only shows up when it matters.
@@ -262,7 +473,7 @@ export default function Home() {
       </section>
 
       {/* Core Capabilities Section */}
-      <section id="capabilities" className="features-section">
+      <section id="capabilities" className="features-section" style={{ paddingTop: '16px', borderTop: 'none' }}>
         <div className="section-header">
           <h2 className="section-title">Core <em>capabilities</em></h2>
           <p className="section-subtitle">
@@ -291,7 +502,7 @@ export default function Home() {
               </svg>
             </div>
             <h3>Smart Audio Processing</h3>
-            <p>Utilizes advanced on-device edge processing to filter background noise, saving battery and transmitting only validated bee acoustics.</p>
+            <p>Streams raw, high-fidelity acoustic data directly from the hive to our secure AWS cloud backend for real-time machine learning analysis.</p>
           </div>
 
           <div className="feature-card">
@@ -350,8 +561,8 @@ export default function Home() {
                     <td>Digital Microphone (8/16 kHz, 16-bit Mono)</td>
                   </tr>
                   <tr>
-                    <th>On-board Processing</th>
-                    <td>Edge processing filtering</td>
+                    <th>Data Processing</th>
+                    <td>Cloud-based AWS analysis</td>
                   </tr>
                   <tr>
                     <td>Environmental Sensors</td>
