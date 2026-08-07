@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Activity, ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, AlertCircle, AlertTriangle, Wifi, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import '../index.css';
+import './Dashboard.css';
 
 const BeeIcon = ({ size = 32, color = "currentColor", className = "", style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={{ color, ...style }}>
@@ -79,48 +81,88 @@ export default function Dashboard() {
     }
   };
 
+  // Helper to get array of YYYY-MM-DD strings between two dates
+  const getDatesInRange = (start: string, end: string) => {
+    const dates = [];
+    let current = new Date(start);
+    const endDate = new Date(end);
+    while (current <= endDate) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+
   // 2. Fetch audio and mock insights for a specific device
   const fetchDeviceData = async (deviceId: string) => {
     setLoadingAudio(true);
     
     // Fetch live acoustic metrics from DynamoDB via API Gateway
     const METRICS_API_URL = 'https://pymedugo4e.execute-api.us-east-1.amazonaws.com/';
-    const url = new URL(METRICS_API_URL);
-    url.searchParams.append('device_id', deviceId.replace('device_', ''));
-    if (startDate) url.searchParams.append('start', startDate);
-    if (endDate) url.searchParams.append('end', endDate);
+    const rawId = deviceId.replace('device_', '');
 
-    fetch(url.toString())
-      .then(res => res.json())
-      .then(data => {
-        // Data is now an array of all timestamps for the selected dates!
-        if (Array.isArray(data) && data.length > 0) {
-          setAllMetrics(data);
-          const latest = data[0]; // Grab the most recent entry for the banner
-          if (latest.features) {
-            setInsights({
-              // Real telemetry straight from DynamoDB!
-              rms_energy: latest.features.rms_energy,
-              zcr: latest.features.zcr,
-              spectral_centroid: latest.features.spectral_centroid,
-              peak_frequency: latest.features.peak_frequency,
-              spectral_bandwidth: latest.features.spectral_bandwidth,
-              spectral_entropy: latest.features.spectral_entropy,
-              // AI Insights
-              overall_status: latest.insights?.overall_status,
-              alert_severity: latest.insights?.alert_severity,
-              inspection_recommendation: latest.insights?.inspection_recommendation,
-              queen_status: latest.insights?.queen_status,
-              health_score: latest.insights?.health_score,
-              swarm_risk: latest.insights?.swarm_risk,
-              foraging_activity: latest.insights?.foraging_activity
-            });
+    try {
+      let combinedData: any[] = [];
+      
+      if (startDate && endDate) {
+        // Chunk requests by day to prevent AWS Lambda 6MB payload limit (500 Error)
+        const days = getDatesInRange(startDate, endDate);
+        const promises = days.map(day => {
+          const url = new URL(METRICS_API_URL);
+          url.searchParams.append('device_id', rawId);
+          url.searchParams.append('start', day);
+          url.searchParams.append('end', day);
+          return fetch(url.toString()).then(res => res.ok ? res.json() : []);
+        });
+        
+        const results = await Promise.all(promises);
+        results.forEach(dayData => {
+          if (Array.isArray(dayData)) {
+            combinedData = combinedData.concat(dayData);
           }
-        } else {
-          setInsights(null);
+        });
+      } else {
+        const url = new URL(METRICS_API_URL);
+        url.searchParams.append('device_id', rawId);
+        const res = await fetch(url.toString());
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) combinedData = data;
         }
-      })
-      .catch(err => console.error("Error fetching metrics:", err));
+      }
+
+      // Sort combined data newest first
+      combinedData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      if (combinedData.length > 0) {
+        setAllMetrics(combinedData);
+        const latest = combinedData.find((m: any) => m.features && m.insights) || combinedData[0];
+        if (latest && latest.features) {
+          setInsights({
+            rms_energy: latest.features.rms_energy,
+            zcr: latest.features.zcr,
+            spectral_centroid: latest.features.spectral_centroid,
+            peak_frequency: latest.features.peak_frequency,
+            spectral_bandwidth: latest.features.spectral_bandwidth,
+            spectral_entropy: latest.features.spectral_entropy,
+            overall_status: latest.insights?.overall_status,
+            alert_severity: latest.insights?.alert_severity,
+            inspection_recommendation: latest.insights?.inspection_recommendation,
+            queen_status: latest.insights?.queen_status,
+            health_score: latest.insights?.health_score,
+            swarm_risk: latest.insights?.swarm_risk,
+            foraging_activity: latest.insights?.foraging_activity
+          });
+        }
+      } else {
+        setAllMetrics([]);
+        setInsights(null);
+      }
+    } catch (err) {
+      console.error("Error fetching metrics:", err);
+      setAllMetrics([]);
+      setInsights(null);
+    }
 
     try {
       const params = new URLSearchParams();
@@ -226,7 +268,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="app-container honeycomb-bg">
+    <div className="dashboard-theme">
       <aside className="sidebar">
         <div className="sidebar-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -240,7 +282,7 @@ export default function Dashboard() {
         
         <div className="device-list">
           {loadingList ? (
-             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+             <div style={{ padding: '20px', textAlign: 'center', color: '#a8b8aa' }}>
                 <RefreshCw className="animate-spin" size={20} />
              </div>
           ) : deviceList.length > 0 ? (
@@ -251,22 +293,31 @@ export default function Dashboard() {
                   key={device.id}
                   className={`device-item ${selectedDevice?.id === device.id ? 'active' : ''}`}
                   onClick={() => handleDeviceClick(device)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', width: '100%' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', color: active ? 'inherit' : 'var(--color-text-muted)' }}>
-                    <Activity size={16} color={active ? '#10b981' : '#6b7280'} />
-                    <span>Device {device.id.replace('device_', '')} {active ? '(Live)' : '(Inactive)'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <BeeIcon size={20} color={active ? '#dfce9f' : '#6b8268'} />
+                      <span style={{ fontWeight: 600 }}>Device {device.id.replace('device_', '')}</span>
+                    </div>
+                    {active ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#10b981' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} /> Live
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: '#6b8268' }}>Offline</span>
+                    )}
                   </div>
                   {device.lastActive && (
-                    <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', paddingLeft: '24px' }}>
-                      Last Active: {device.lastActive}
-                    </span>
+                    <div style={{ fontSize: '0.75rem', color: '#a8b8aa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Wifi size={12} /> Sync: {device.lastActive.split(' ')[1] || device.lastActive}
+                    </div>
                   )}
                 </button>
               );
             })
           ) : (
-            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+            <div style={{ padding: '20px', textAlign: 'center', color: '#a8b8aa', fontSize: '0.85rem' }}>
                No devices registered in database.
             </div>
           )}
@@ -275,12 +326,12 @@ export default function Dashboard() {
         <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', gap: '12px' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Start Date</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit', width: '100%' }} />
+              <label style={{ fontSize: '0.8rem', color: '#688d71', marginBottom: '8px', display: 'block', textTransform: 'uppercase' }}>Start Date</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid rgba(223, 206, 159, 0.2)', background: 'rgba(0,0,0,0.2)', color: '#ffffff', colorScheme: 'dark', fontFamily: 'inherit', width: '100%' }} />
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>End Date</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'var(--color-text-primary)', colorScheme: 'dark', fontFamily: 'inherit', width: '100%' }} />
+              <label style={{ fontSize: '0.8rem', color: '#688d71', marginBottom: '8px', display: 'block', textTransform: 'uppercase' }}>End Date</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid rgba(223, 206, 159, 0.2)', background: 'rgba(0,0,0,0.2)', color: '#ffffff', colorScheme: 'dark', fontFamily: 'inherit', width: '100%' }} />
             </div>
           </div>
           <button 
@@ -323,7 +374,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <header className="content-header" style={{ position: 'relative' }}>
+            <header className="dashboard-header">
               
               <button 
                 onClick={handleGlobalRefresh}
@@ -334,11 +385,38 @@ export default function Dashboard() {
                 <RefreshCw size={18} />
               </button>
 
-              <h2 style={{ marginTop: '12px', fontFamily: '"Georgia", serif', fontSize: '2.5rem', fontWeight: 400 }}>Device {selectedDevice.id.replace('device_', '')} AI insights</h2>
+              <h2 style={{ margin: '0 0 16px 0', fontFamily: '"Georgia", serif', fontSize: '2.5rem', fontWeight: 400 }}>Device {selectedDevice.id.replace('device_', '')} Telemetry</h2>
               
-              {/* --- AI INSIGHTS BANNER --- */}
+              {/* --- ALERT CENTER --- */}
+              {insights && (insights.alert_severity === 'High' || insights.swarm_risk === 'High' || insights.queen_status === 'Absent') && (
+                <div style={{ marginTop: '20px', marginBottom: '8px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  
+                  {insights.alert_severity === 'High' && (
+                    <div className="alert-critical" style={{ padding: '16px 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '300px' }}>
+                      <AlertCircle size={24} />
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 600 }}>Critical Alert</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem' }}>Immediate attention required based on acoustic anomaly.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {insights.swarm_risk === 'High' && (
+                    <div className="alert-warning" style={{ padding: '16px 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '300px' }}>
+                      <AlertTriangle size={24} />
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 600 }}>Swarm Warning</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem' }}>Acoustic signatures indicate elevated swarming risk.</p>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+              
+              {/* --- AI INSIGHTS BANNER (Restored) --- */}
               {insights && insights.overall_status && (
-                <div style={{ marginTop: '20px', marginBottom: '8px' }}>
+                <div style={{ marginTop: '16px', marginBottom: '8px' }}>
                   <div style={{
                     padding: '16px 20px',
                     borderRadius: '8px',
@@ -373,20 +451,68 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
-              
             </header>
-            <div className="content-divider" style={{ margin: '0 48px' }}></div>
             
             <div className="dashboard-scroll-area">
 
-              <div className="dashboard-split-view">
+              {/* --- DATA VISUALIZATION (CHARTS) --- */}
+              {allMetrics.length > 0 && (
+                <div className="dashboard-section">
+                  <div className="section-title-clean">TELEMETRY TRENDS</div>
+                  <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                    
+                    <div className="chart-panel" style={{ flex: '1 1 400px', height: '300px' }}>
+                      <h4 style={{ color: '#243528', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 700 }}>Health Score & Acoustic Energy</h4>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={[...allMetrics].reverse()}>
+                          <defs>
+                            <linearGradient id="colorHealth" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorEnergy" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#d97706" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(36, 53, 40, 0.1)" vertical={false} />
+                          <XAxis dataKey="timestamp" tick={{ fill: '#4a5d4e', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} />
+                          <YAxis yAxisId="left" tick={{ fill: '#4a5d4e', fontSize: 10 }} domain={[0, 10]} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#d97706', fontSize: 10 }} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: 'rgba(36, 53, 40, 0.1)', color: '#243528', borderRadius: '8px' }} itemStyle={{ color: '#243528' }} />
+                          <Area yAxisId="left" type="monotone" dataKey="insights.health_score" name="Health Score" stroke="#10b981" fillOpacity={1} fill="url(#colorHealth)" />
+                          <Area yAxisId="right" type="monotone" dataKey="features.rms_energy" name="RMS Energy" stroke="#d97706" fillOpacity={1} fill="url(#colorEnergy)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="chart-panel" style={{ flex: '1 1 400px', height: '300px' }}>
+                      <h4 style={{ color: '#243528', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 700 }}>Spectral Complexity (Entropy & Bandwidth)</h4>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={[...allMetrics].reverse()}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(36, 53, 40, 0.1)" vertical={false} />
+                          <XAxis dataKey="timestamp" tick={{ fill: '#4a5d4e', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} />
+                          <YAxis yAxisId="left" tick={{ fill: '#3b82f6', fontSize: 10 }} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#8b5cf6', fontSize: 10 }} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: 'rgba(36, 53, 40, 0.1)', color: '#243528', borderRadius: '8px' }} itemStyle={{ color: '#243528' }} />
+                          <Line yAxisId="left" type="monotone" dataKey="features.spectral_entropy" name="Entropy" stroke="#3b82f6" dot={false} strokeWidth={2} />
+                          <Line yAxisId="right" type="monotone" dataKey="features.spectral_bandwidth" name="Bandwidth" stroke="#8b5cf6" dot={false} strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              <div className="dashboard-split-view dashboard-section">
                 
                 {/* --- LEFT COLUMN: INSIGHTS --- */}
                 <div className="insights-column">
                   
                   {/* HEALTH DIAGNOSTICS */}
                   {insights && insights.health_score !== undefined && (
-                    <div style={{ marginBottom: '48px' }}>
+                    <div style={{ marginBottom: '24px' }}>
                       <div className="section-title-clean">HEALTH DIAGNOSTICS</div>
                       <div className="insight-panel">
                         <div className="insight-list">
@@ -472,7 +598,7 @@ export default function Dashboard() {
 
                       return Object.entries(grouped).map(([dateLabel, segments]) => (
                         <div key={dateLabel} style={{ marginBottom: '24px' }}>
-                          <div style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace' }}>
+                          <div style={{ color: '#4a5d4e', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace', fontWeight: 600 }}>
                             {dateLabel}
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
