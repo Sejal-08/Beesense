@@ -213,6 +213,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (selectedDevice) {
       fetchDeviceData(selectedDevice.id);
+      
+      // Auto-reload data every 1 minute (60000 ms)
+      const intervalId = setInterval(() => {
+        fetchDeviceData(selectedDevice.id);
+      }, 60000);
+      
+      return () => clearInterval(intervalId);
     }
   }, [selectedDevice, startDate, endDate]);
 
