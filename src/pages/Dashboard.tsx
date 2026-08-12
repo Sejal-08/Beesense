@@ -165,18 +165,39 @@ export default function Dashboard() {
     }
 
     try {
-      const params = new URLSearchParams();
-      params.append('action', 'get_audio');
-      const rawId = deviceId.replace('device_', '');
-      params.append('device_id', rawId);
-      if (startDate) params.append('start', startDate);
-      if (endDate) params.append('end', endDate);
+      let combinedAudio: Segment[] = [];
       
-      const response = await fetch(`${API_GATEWAY_URL}?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch audio');
+      if (startDate && endDate) {
+        const days = getDatesInRange(startDate, endDate);
+        const promises = days.map(day => {
+          const params = new URLSearchParams();
+          params.append('action', 'get_audio');
+          params.append('device_id', rawId);
+          params.append('start', day);
+          params.append('end', day);
+          return fetch(`${API_GATEWAY_URL}?${params.toString()}`).then(res => res.ok ? res.json() : []);
+        });
+        
+        const results = await Promise.all(promises);
+        results.forEach(dayData => {
+          if (Array.isArray(dayData)) {
+            combinedAudio = combinedAudio.concat(dayData);
+          }
+        });
+      } else {
+        const params = new URLSearchParams();
+        params.append('action', 'get_audio');
+        params.append('device_id', rawId);
+        if (startDate) params.append('start', startDate);
+        if (endDate) params.append('end', endDate);
+        const response = await fetch(`${API_GATEWAY_URL}?${params.toString()}`);
+        if (response.ok) {
+           const data = await response.json();
+           if (Array.isArray(data)) combinedAudio = data;
+        }
+      }
       
-      const data: Segment[] = await response.json();
-      setAudioSegments(data);
+      setAudioSegments(combinedAudio);
     } catch (err: any) {
       console.error(err);
       setAudioSegments([]);
@@ -605,7 +626,7 @@ export default function Dashboard() {
                             {segments.map((data, idx) => (
                               <div key={idx} className="audio-card-minimal">
                                 <span className="audio-filename">{data.filename.split('_').pop()}</span>
-                                <audio controls src={data.url} onPlay={(e) => handlePlay(e, data)} style={{ flex: 1, height: '32px' }} />
+                                <audio controls preload="none" src={data.url} onPlay={(e) => handlePlay(e, data)} style={{ flex: 1, height: '32px' }} />
                               </div>
                             ))}
                           </div>
