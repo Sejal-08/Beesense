@@ -49,6 +49,38 @@ interface HiveInsights {
 
 const API_GATEWAY_URL = 'https://qy0g6eet0g.execute-api.us-east-1.amazonaws.com/default/FetchBeeAudioAPI';
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const hasHealth = payload.find((p: any) => p.name === 'Health Score');
+    
+    return (
+      <div className="custom-tooltip">
+        <p className="label" style={{ margin: '0 0 8px 0', fontSize: '0.8rem', color: '#a8b8aa', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>{label}</p>
+        {payload.map((entry: any, index: number) => {
+          let displayValue = entry.value;
+          if (typeof entry.value === 'number') {
+            displayValue = (entry.name === 'RMS Energy' || entry.value < 0.1) 
+              ? entry.value.toFixed(5) 
+              : entry.value.toFixed(2);
+          }
+          return (
+            <div key={`item-${index}`} className="tooltip-item" style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', fontSize: '0.9rem', marginBottom: '4px' }}>
+              <span style={{ color: entry.color }}>{entry.name}:</span>
+              <span className="val" style={{ fontWeight: 600, color: '#fff' }}>{displayValue}</span>
+            </div>
+          );
+        })}
+        {hasHealth && hasHealth.value < 6 && (
+          <div className="tooltip-alert warning" style={{ marginTop: '8px', padding: '4px 8px', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.75rem', textAlign: 'center', fontWeight: 600 }}>
+            Health Dropping
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function Dashboard() {
   const [deviceList, setDeviceList] = useState<DeviceSummary[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null);
@@ -303,8 +335,10 @@ export default function Dashboard() {
         
         <div className="device-list">
           {loadingList ? (
-             <div style={{ padding: '20px', textAlign: 'center', color: '#a8b8aa' }}>
-                <RefreshCw className="animate-spin" size={20} />
+             <div className="skeleton-container" style={{ padding: '16px' }}>
+               {[1, 2, 3].map(i => (
+                 <div key={i} className="device-item skeleton-item" style={{ height: '70px', border: 'none', marginBottom: '8px' }}></div>
+               ))}
              </div>
           ) : deviceList.length > 0 ? (
             deviceList.map((device) => {
@@ -331,7 +365,7 @@ export default function Dashboard() {
                   </div>
                   {device.lastActive && (
                     <div style={{ fontSize: '0.75rem', color: '#a8b8aa', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Wifi size={12} /> Sync: {device.lastActive.split(' ')[1] || device.lastActive}
+                      <Wifi size={12} /> Sync: {device.lastActive}
                     </div>
                   )}
                 </button>
@@ -380,10 +414,21 @@ export default function Dashboard() {
             <p>Choose a device from the list to explore AI insights and acoustic data.</p>
           </div>
         ) : loadingAudio ? (
-          <div className="empty-state">
-            <RefreshCw className="animate-spin" size={64} color="var(--color-honey-primary)" style={{ animation: 'spin 1.5s linear infinite' }} />
-            <h3>Analyzing Acoustic Data...</h3>
-            <p>Extracting Mel Spectrograms and generating AI insights.</p>
+          <div className="dashboard-scroll-area" style={{ padding: '48px', width: '100%' }}>
+             {/* Header Skeleton */}
+             <div className="skeleton-item" style={{ height: '120px', borderRadius: '16px', marginBottom: '40px' }}></div>
+             
+             {/* Charts Skeleton */}
+             <div style={{ display: 'flex', gap: '24px', marginBottom: '40px' }}>
+                <div className="skeleton-item" style={{ flex: 1, height: '300px', borderRadius: '24px' }}></div>
+                <div className="skeleton-item" style={{ flex: 1, height: '300px', borderRadius: '24px' }}></div>
+             </div>
+
+             {/* Split View Skeleton */}
+             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                <div className="skeleton-item" style={{ flex: 1, minWidth: '300px', height: '400px', borderRadius: '16px' }}></div>
+                <div className="skeleton-item" style={{ flex: 1, minWidth: '300px', height: '400px', borderRadius: '16px' }}></div>
+             </div>
           </div>
         ) : audioSegments.length === 0 ? (
           <div className="empty-state">
@@ -500,7 +545,7 @@ export default function Dashboard() {
                           <XAxis dataKey="timestamp" tick={{ fill: '#4a5d4e', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} />
                           <YAxis yAxisId="left" tick={{ fill: '#4a5d4e', fontSize: 10 }} domain={[0, 10]} />
                           <YAxis yAxisId="right" orientation="right" tick={{ fill: '#d97706', fontSize: 10 }} />
-                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: 'rgba(36, 53, 40, 0.1)', color: '#243528', borderRadius: '8px' }} itemStyle={{ color: '#243528' }} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                           <Area yAxisId="left" type="monotone" dataKey="insights.health_score" name="Health Score" stroke="#10b981" fillOpacity={1} fill="url(#colorHealth)" />
                           <Area yAxisId="right" type="monotone" dataKey="features.rms_energy" name="RMS Energy" stroke="#d97706" fillOpacity={1} fill="url(#colorEnergy)" />
                         </AreaChart>
@@ -515,7 +560,7 @@ export default function Dashboard() {
                           <XAxis dataKey="timestamp" tick={{ fill: '#4a5d4e', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} />
                           <YAxis yAxisId="left" tick={{ fill: '#3b82f6', fontSize: 10 }} />
                           <YAxis yAxisId="right" orientation="right" tick={{ fill: '#8b5cf6', fontSize: 10 }} />
-                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: 'rgba(36, 53, 40, 0.1)', color: '#243528', borderRadius: '8px' }} itemStyle={{ color: '#243528' }} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                           <Line yAxisId="left" type="monotone" dataKey="features.spectral_entropy" name="Entropy" stroke="#3b82f6" dot={false} strokeWidth={2} />
                           <Line yAxisId="right" type="monotone" dataKey="features.spectral_bandwidth" name="Bandwidth" stroke="#8b5cf6" dot={false} strokeWidth={2} />
                         </LineChart>

@@ -49,6 +49,24 @@ export default function Home() {
     };
   }, [isPlaying, audioContext]);
 
+  // Scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.15 });
+    
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+
   const generateBeeSound = (mode: string) => {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     setAudioContext(ctx);
@@ -179,7 +197,7 @@ export default function Home() {
       </section>
 
       {/* How it Works Section */}
-      <section className="how-it-works-section">
+      <section className="how-it-works-section animate-on-scroll">
         <div className="hiw-container">
           <div className="section-header">
             <h2 className="section-title">How <em>BeeSense</em> Works</h2>
@@ -231,7 +249,7 @@ export default function Home() {
       </section>
 
       {/* Why Bee Sounds Matter Section */}
-      <section id="why-sounds-matter" className="why-sounds-section">
+      <section id="why-sounds-matter" className="why-sounds-section animate-on-scroll">
         <div className="section-header">
           <h2 className="section-title">Why bee sounds <em>matter</em></h2>
           <p className="section-subtitle">
@@ -303,7 +321,7 @@ export default function Home() {
       </section>
 
       {/* Interactive Audio Section */}
-      <section className="interactive-audio-section">
+      <section className="interactive-audio-section animate-on-scroll">
         <div className="audio-container">
           <div className="audio-header">
             <h2>Listen to the Hive</h2>
@@ -377,7 +395,7 @@ export default function Home() {
       </section>
 
       {/* Applications and Benefits Section */}
-      <section id="applications" className="features-section apps-section-dark">
+      <section id="applications" className="features-section apps-section-dark animate-on-scroll">
         <div className="section-header">
           <h2 className="section-title" style={{ fontSize: '2.8rem', maxWidth: '800px', margin: '0 auto 16px' }}>Built for every scale,<br/>from the <em>whole field</em> to one hive.</h2>
           <p className="section-subtitle" style={{ maxWidth: '700px', margin: '0 auto 16px', fontSize: '1.05rem', lineHeight: '1.6' }}>
@@ -473,7 +491,7 @@ export default function Home() {
       </section>
 
       {/* Core Capabilities Section */}
-      <section id="capabilities" className="features-section" style={{ paddingTop: '16px', borderTop: 'none' }}>
+      <section id="capabilities" className="features-section animate-on-scroll" style={{ paddingTop: '16px', borderTop: 'none' }}>
         <div className="section-header">
           <h2 className="section-title">Core <em>capabilities</em></h2>
           <p className="section-subtitle">
@@ -518,7 +536,7 @@ export default function Home() {
       </section>
 
       {/* Hardware Section */}
-      <section id="hardware" className="hardware-section">
+      <section id="hardware" className="hardware-section animate-on-scroll">
         <h2 className="section-title text-center" style={{ marginBottom: '48px' }}>Hardware <span className="highlight">Overview</span></h2>
         
         <div className="hardware-layout">
