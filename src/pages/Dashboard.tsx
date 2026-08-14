@@ -528,9 +528,9 @@ export default function Dashboard() {
                   <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
                     
                     <div className="chart-panel" style={{ flex: '1 1 400px', height: '300px' }}>
-                      <h4 style={{ color: '#243528', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 700 }}>Health Score & Acoustic Energy</h4>
+                      <h4 style={{ color: 'var(--color-text-secondary)', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 700 }}>Health Score & Acoustic Energy</h4>
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={[...allMetrics].reverse()}>
+                        <AreaChart data={[...allMetrics].reverse()} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
                           <defs>
                             <linearGradient id="colorHealth" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -542,9 +542,9 @@ export default function Dashboard() {
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(36, 53, 40, 0.1)" vertical={false} />
-                          <XAxis dataKey="timestamp" tick={{ fill: '#4a5d4e', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} />
-                          <YAxis yAxisId="left" tick={{ fill: '#4a5d4e', fontSize: 10 }} domain={[0, 10]} />
-                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#d97706', fontSize: 10 }} />
+                          <XAxis dataKey="timestamp" tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} label={{ value: 'Time', position: 'insideBottom', offset: -5, fill: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600 }} />
+                          <YAxis yAxisId="left" tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }} domain={[0, 10]} label={{ value: 'Score', angle: -90, position: 'insideLeft', offset: 10, fill: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600 }} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#d97706', fontSize: 10 }} label={{ value: 'Energy', angle: 90, position: 'insideRight', offset: 10, fill: '#d97706', fontSize: 12, fontWeight: 600 }} />
                           <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                           <Area yAxisId="left" type="monotone" dataKey="insights.health_score" name="Health Score" stroke="#10b981" fillOpacity={1} fill="url(#colorHealth)" />
                           <Area yAxisId="right" type="monotone" dataKey="features.rms_energy" name="RMS Energy" stroke="#d97706" fillOpacity={1} fill="url(#colorEnergy)" />
@@ -553,13 +553,13 @@ export default function Dashboard() {
                     </div>
 
                     <div className="chart-panel" style={{ flex: '1 1 400px', height: '300px' }}>
-                      <h4 style={{ color: '#243528', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 700 }}>Spectral Complexity (Entropy & Bandwidth)</h4>
+                      <h4 style={{ color: 'var(--color-text-secondary)', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 700 }}>Spectral Complexity (Entropy & Bandwidth)</h4>
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={[...allMetrics].reverse()}>
+                        <LineChart data={[...allMetrics].reverse()} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(36, 53, 40, 0.1)" vertical={false} />
-                          <XAxis dataKey="timestamp" tick={{ fill: '#4a5d4e', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} />
-                          <YAxis yAxisId="left" tick={{ fill: '#3b82f6', fontSize: 10 }} />
-                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#8b5cf6', fontSize: 10 }} />
+                          <XAxis dataKey="timestamp" tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }} tickFormatter={(val) => val.split(' ')[1] || val} label={{ value: 'Time', position: 'insideBottom', offset: -5, fill: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600 }} />
+                          <YAxis yAxisId="left" tick={{ fill: '#3b82f6', fontSize: 10 }} label={{ value: 'Entropy', angle: -90, position: 'insideLeft', offset: 10, fill: '#3b82f6', fontSize: 12, fontWeight: 600 }} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#8b5cf6', fontSize: 10 }} label={{ value: 'Bandwidth', angle: 90, position: 'insideRight', offset: 10, fill: '#8b5cf6', fontSize: 12, fontWeight: 600 }} />
                           <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                           <Line yAxisId="left" type="monotone" dataKey="features.spectral_entropy" name="Entropy" stroke="#3b82f6" dot={false} strokeWidth={2} />
                           <Line yAxisId="right" type="monotone" dataKey="features.spectral_bandwidth" name="Bandwidth" stroke="#8b5cf6" dot={false} strokeWidth={2} />
@@ -664,7 +664,7 @@ export default function Dashboard() {
 
                       return Object.entries(grouped).map(([dateLabel, segments]) => (
                         <div key={dateLabel} style={{ marginBottom: '24px' }}>
-                          <div style={{ color: '#4a5d4e', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace', fontWeight: 600 }}>
+                          <div style={{ color: 'var(--theme-dash-muted)', fontSize: '0.75rem', marginBottom: '12px', fontFamily: 'monospace', fontWeight: 600 }}>
                             {dateLabel}
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

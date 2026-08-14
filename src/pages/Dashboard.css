@@ -1,8 +1,8 @@
 /* Dashboard.css - Premium Theme Override */
 
 .dashboard-theme {
-  background-color: #243528;
-  color: #ffffff;
+  background-color: var(--theme-dash-bg);
+  color: var(--theme-dash-text);
   height: 100vh;
   display: flex;
   flex-direction: row;
@@ -10,8 +10,8 @@
 }
 
 .dashboard-theme .sidebar {
-  background-color: #1a261c;
-  border-right: 1px solid rgba(223, 206, 159, 0.15);
+  background-color: var(--theme-dash-sidebar);
+  border-right: 1px solid var(--theme-dash-border);
   width: 320px;
   flex-shrink: 0;
   display: flex;
@@ -20,17 +20,17 @@
 }
 
 .dashboard-theme .sidebar-header {
-  border-bottom: 1px solid rgba(223, 206, 159, 0.15);
+  border-bottom: 1px solid var(--theme-dash-border);
 }
 
 .dashboard-theme .sidebar-header h1 {
-  color: #dfce9f;
+  color: var(--theme-nav-text);
   font-family: 'Georgia', serif;
 }
 
 .dashboard-theme .main-content {
-  background-color: #c2d2b4;
-  color: #243528;
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-secondary);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -70,7 +70,7 @@
 
 .dashboard-divider {
   margin: 24px 48px;
-  border-bottom: 1px solid rgba(223, 206, 159, 0.15);
+  border-bottom: 1px solid var(--theme-dash-border);
 }
 
 .dashboard-section {
@@ -105,9 +105,9 @@
 
 /* Glassmorphism Panels */
 .dashboard-theme .insight-panel {
-  background: #243528;
-  color: #ffffff;
-  border: 1px solid rgba(223, 206, 159, 0.2);
+  background: var(--theme-dash-panel);
+  color: var(--theme-dash-panel-text);
+  border: 1px solid var(--theme-dash-border);
   border-radius: 16px;
   padding: 12px 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -129,20 +129,20 @@
 }
 
 .dashboard-theme .insight-label {
-  color: #a8b8aa;
+  color: var(--theme-dash-muted);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .dashboard-theme .insight-value {
-  color: #ffffff;
+  color: var(--theme-dash-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
 
 .dashboard-theme .section-title-clean {
-  color: #243528;
+  color: var(--color-text-secondary);
   font-weight: 700;
   font-size: 0.9rem;
   text-transform: uppercase;
@@ -183,7 +183,7 @@
   .dashboard-theme .sidebar {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(223, 206, 159, 0.15);
+    border-bottom: 1px solid var(--theme-dash-border);
   }
   
   .dashboard-theme .main-content {
@@ -357,7 +357,7 @@
 .player-filename {
   font-family: monospace;
   font-size: 0.8rem;
-  color: #dfce9f;
+  color: var(--theme-nav-text);
 }
 
 .waveform-wrapper {
@@ -404,7 +404,7 @@
 .sc-val {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--theme-dash-text);
   margin-top: 8px;
   z-index: 2;
 }
@@ -412,7 +412,7 @@
 .sc-val span {
   font-size: 0.9rem;
   font-weight: 400;
-  color: #a8b8aa;
+  color: var(--theme-dash-muted);
 }
 
 .sc-chart {
@@ -427,8 +427,8 @@
 
 /* Tooltips */
 .custom-tooltip {
-  background: rgba(16, 25, 20, 0.95);
-  border: 1px solid rgba(134, 207, 167, 0.3);
+  background: var(--theme-dash-glass);
+  border: 1px solid var(--theme-dash-glass-border);
   padding: 12px;
   border-radius: 8px;
   backdrop-filter: blur(8px);
@@ -436,7 +436,7 @@
 .custom-tooltip .label {
   margin: 0 0 8px 0;
   font-size: 0.8rem;
-  color: #a8b8aa;
+  color: var(--theme-dash-muted);
   border-bottom: 1px solid rgba(255,255,255,0.1);
   padding-bottom: 4px;
 }
@@ -449,7 +449,7 @@
 }
 .tooltip-item .val {
   font-weight: 600;
-  color: #fff;
+  color: var(--theme-dash-text);
 }
 .tooltip-alert.warning {
   margin-top: 8px;

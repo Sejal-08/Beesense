@@ -18,22 +18,23 @@ html .logo-dark-mode {
 }
 
 :root {
-  --color-bg-dark: #c2d2b4; /* Soft Sage Green */
-  --color-bg-panel: #f2f5e3; /* Warm Cream */
-  --color-bg-hover: #e8ecd3; /* Slightly darker cream */
+  /* Legacy Base Colors (Dark Mode Defaults) */
+  --color-bg-dark: #121814; 
+  --color-bg-panel: #0a0e0b; 
+  --color-bg-hover: #1a231d; 
   
-  --color-honey-primary: #a52a2a; /* Deep Terracotta Red */
+  --color-honey-primary: #a52a2a; 
   --color-honey-light: #c84b31;
   --color-honey-dark: #7a1b1b;
   
-  --color-tech-primary: #276326; /* Forest Green */
+  --color-tech-primary: #276326; 
   --color-tech-light: #3a8a39;
   
-  --color-text-primary: #1a3319; /* Deep Forest/Charcoal */
-  --color-text-secondary: #465c44; /* Medium Olive */
-  --color-text-muted: #6b8268;
+  --color-text-primary: #f0f4f0; 
+  --color-text-secondary: #f0f4f0; 
+  --color-text-muted: #7a8f7d;
   
-  --border-color: rgba(39, 99, 38, 0.15); /* Forest green tinted border */
+  --border-color: rgba(223, 206, 159, 0.15); 
   --border-glow: rgba(39, 99, 38, 0.3);
   
   --border-radius-sm: 6px;
@@ -45,9 +46,48 @@ html .logo-dark-mode {
   
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Dynamic Theme Variables (Default Dark Mode - Charcoal/Black) */
+  --theme-nav-bg: #0a0e0b; /* Almost black */
+  --theme-nav-text: #dfce9f; /* Pale Gold */
+  --theme-dash-bg: #121814; /* Very Dark Grey/Green */
+  --theme-dash-sidebar: #0a0e0b; /* Almost black */
+  --theme-dash-text: #f0f4f0; /* Off-white */
+  --theme-dash-muted: #7a8f7d; /* Muted green-grey */
+  --theme-dash-panel: #1a231d; /* Dark Panel */
+  --theme-dash-panel-text: #ffffff;
+  --theme-dash-panel-hover: #232e26;
+  --theme-dash-border: rgba(223, 206, 159, 0.15);
+  --theme-dash-glass: rgba(10, 14, 11, 0.95);
+  --theme-dash-glass-border: rgba(223, 206, 159, 0.2);
+  --theme-color-scheme: dark;
 }
 
-/* Glassmorphism Utilities */
+[data-theme='light'] {
+  /* Override Dynamic Theme Variables for EXACT Original Mix */
+  --theme-nav-bg: #243528;
+  --theme-nav-text: #dfce9f;
+  --theme-dash-bg: #243528; 
+  --theme-dash-sidebar: #1a261c;
+  --theme-dash-text: #ffffff; 
+  --theme-dash-muted: #a8b8aa;
+  --theme-dash-panel: #243528;
+  --theme-dash-panel-text: #ffffff;
+  --theme-dash-panel-hover: #1a261c;
+  --theme-dash-border: rgba(223, 206, 159, 0.2);
+  --theme-dash-glass: rgba(16, 25, 20, 0.95);
+  --theme-dash-glass-border: rgba(134, 207, 167, 0.3);
+  --theme-color-scheme: light;
+  
+  /* Main Content Colors for Original Mix */
+  --color-bg-dark: #c2d2b4; /* Sage green main content */
+  --color-bg-panel: #f2f5e3;
+  --color-bg-hover: #e8ecd3;
+  --color-text-primary: #1a3319;
+  --color-text-secondary: #243528; /* Dark text for main content */
+  --color-text-muted: #465c44;
+  --border-color: rgba(39, 99, 38, 0.15);
+}
 .glass-panel {
   background: var(--color-bg-panel);
   border: 1px solid var(--border-color);
@@ -670,13 +710,13 @@ audio::-webkit-media-controls-time-remaining-display {
   align-items: center;
   gap: 16px;
   padding: 8px 16px;
-  background: rgba(242, 245, 227, 0.5); /* subtle bg */
+  background: var(--color-bg-panel);
   border-radius: var(--border-radius-sm);
   transition: background 0.2s;
 }
 
 .audio-card-minimal:hover {
-  background: rgba(242, 245, 227, 0.9);
+  background: var(--color-bg-hover);
 }
 
 .audio-card-minimal .audio-filename {
@@ -689,6 +729,7 @@ audio::-webkit-media-controls-time-remaining-display {
 .audio-card-minimal audio {
   flex: 1;
   height: 30px;
+  color-scheme: var(--theme-color-scheme);
 }
 
 .audio-card-minimal .play-btn-circle {

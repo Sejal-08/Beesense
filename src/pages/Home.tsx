@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, ActivitySquare, BarChart3, Shield, Mic, Cpu, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, ActivitySquare, BarChart3, Shield, Mic, Cpu, LayoutDashboard, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 import '../App.css';
@@ -22,12 +22,32 @@ const BeeIcon = () => (
   </svg>
 );
 
+const HARDWARE_HOTSPOTS = [
+  { id: 1, title: 'EC200 GSM', desc: 'Cellular connectivity for real-time AWS streaming.', top: '82%', left: '45%' },
+  { id: 2, title: 'nRF5340 SoC', desc: 'Dual-Core ARM Cortex-M33 for edge ML inference.', top: '81%', left: '73%' },
+  { id: 3, title: 'GSM Antenna', desc: 'High-gain external antenna for remote apiary coverage.', top: '14%', left: '35%' },
+  { id: 4, title: 'Li-ion Cells', desc: 'High-capacity dual battery setup for extended life.', top: '75%', left: '20%' },
+  { id: 5, title: 'Digital Mic Wiring', desc: '16-bit acoustic capture perfectly tuned to hive frequencies.', top: '45%', left: '52%' },
+];
 
 export default function Home() {
   const navigate = useNavigate();
   const [audioMode, setAudioMode] = useState('healthy');
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [activeHotspot, setActiveHotspot] = useState<number | null>(null);
+  
+  // Theme Management
+  const [theme, setTheme] = useState(localStorage.getItem('beesense-theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('beesense-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   // Auto-stop playing after a few seconds to simulate an audio clip
   useEffect(() => {
@@ -137,9 +157,30 @@ export default function Home() {
           <span>BeeSense</span>
         </div>
         <div className="nav-actions">
-          <button className="nav-cta" onClick={() => navigate('/dashboard')}>
-            Live Data <ArrowRight size={18} />
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <button 
+            onClick={toggleTheme}
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: 'var(--theme-nav-text)', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px',
+              borderRadius: '50%'
+            }}
+            title="Toggle Daylight Mode"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+          
+          <button className="nav-cta" onClick={() => navigate('/dashboard')}>
+            Launch Dashboard
+            <ArrowRight size={16} />
+          </button>
+        </div>
         </div>
       </nav>
 
@@ -541,7 +582,24 @@ export default function Home() {
         
         <div className="hardware-layout">
           <div className="assembly-visual">
-            <img src={deployment7} alt="BeeSense Assembly" className="assembly-img" />
+            <div className="hotspot-container">
+              <img src={deployment7} alt="BeeSense Assembly" className="assembly-img" />
+              {HARDWARE_HOTSPOTS.map((spot) => (
+                <div 
+                  key={spot.id}
+                  className={`hotspot-dot ${activeHotspot === spot.id ? 'active' : ''}`}
+                  style={{ top: spot.top, left: spot.left }}
+                  onMouseEnter={() => setActiveHotspot(spot.id)}
+                  onMouseLeave={() => setActiveHotspot(null)}
+                >
+                  <div className="hotspot-pulse"></div>
+                  <div className="hotspot-tooltip">
+                    <h4>{spot.title}</h4>
+                    <p>{spot.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="glow-effect secondary"></div>
           </div>
           <div className="assembly-content">
