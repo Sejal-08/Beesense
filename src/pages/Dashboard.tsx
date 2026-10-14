@@ -81,6 +81,23 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const safeDateMs = (dStr?: string) => {
+  if (!dStr) return 0;
+  const isoStr = dStr.includes(' ') ? dStr.replace(' ', 'T') : dStr;
+  const t = new Date(isoStr).getTime();
+  return isNaN(t) ? 0 : t;
+};
+
+const parseAudioTimestamp = (filename: string): string => {
+  const filenameOnly = filename.split('/').pop() || '';
+  const rawTimeStr = filenameOnly.replace('audio_', '').replace('.wav', '');
+  if (rawTimeStr.includes('_')) {
+    const [datePart, timePart] = rawTimeStr.split('_');
+    return `${datePart} ${timePart.replace(/-/g, ':')}`;
+  }
+  return rawTimeStr;
+};
+
 export default function Dashboard() {
   const [deviceList, setDeviceList] = useState<DeviceSummary[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null);
@@ -107,7 +124,7 @@ export default function Dashboard() {
       
       // Ensure all active devices are always present even if API scan truncates at 1MB
       const knownDevices: DeviceSummary[] = [
-        { id: '22', lastActive: '2026-10-13 12:19:54' },
+        { id: '22', lastActive: '2026-10-13 14:40:19' },
         { id: '170', lastActive: '2026-08-14 18:24:16' }
       ];
 
@@ -115,7 +132,7 @@ export default function Dashboard() {
         const existing = data.find(d => d.id === kd.id || d.id === `device_${kd.id}`);
         if (!existing) {
           data.push(kd);
-        } else if (!existing.lastActive || new Date(kd.lastActive).getTime() > new Date(existing.lastActive).getTime()) {
+        } else if (!existing.lastActive || safeDateMs(kd.lastActive) > safeDateMs(existing.lastActive)) {
           existing.lastActive = kd.lastActive;
         }
       });
@@ -128,6 +145,24 @@ export default function Dashboard() {
       });
 
       setDeviceList(data);
+
+      // Auto-select the first device if none is selected yet
+      if (data.length > 0) {
+        setSelectedDevice(prev => {
+          if (!prev) {
+            const defaultDev = data.find(d => d.id === '22' || d.id === 'device_22') || data[0];
+            if (defaultDev.lastActive) {
+              const dStr = defaultDev.lastActive.split(' ')[0];
+              if (dStr) {
+                setStartDate(dStr);
+                setEndDate(dStr);
+              }
+            }
+            return defaultDev;
+          }
+          return prev;
+        });
+      }
     } catch (err: any) {
       console.error(err);
       setError("Waiting for AWS API Gateway configuration...");
@@ -155,10 +190,10 @@ export default function Dashboard() {
     // Fetch live acoustic metrics from DynamoDB via API Gateway
     const METRICS_API_URL = 'https://pymedugo4e.execute-api.us-east-1.amazonaws.com/';
     const rawId = deviceId.replace('device_', '');
+    let combinedData: any[] = [];
+    let combinedAudio: Segment[] = [];
 
     try {
-      let combinedData: any[] = [];
-      
       if (startDate && endDate) {
         // Chunk requests by day to prevent AWS Lambda 6MB payload limit (500 Error)
         const days = getDatesInRange(startDate, endDate);
@@ -187,7 +222,7 @@ export default function Dashboard() {
       }
 
       // Sort combined data newest first
-      combinedData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      combinedData.sort((a, b) => safeDateMs(b.timestamp) - safeDateMs(a.timestamp));
 
       if (combinedData.length > 0) {
         setAllMetrics(combinedData);
@@ -220,8 +255,6 @@ export default function Dashboard() {
     }
 
     try {
-      let combinedAudio: Segment[] = [];
-      
       if (startDate && endDate) {
         const days = getDatesInRange(startDate, endDate);
         const promises = days.map(day => {
@@ -257,6 +290,35 @@ export default function Dashboard() {
       console.error(err);
       setAudioSegments([]);
     } finally {
+      // Dynamically calculate latest sync timestamp from both metrics and audio
+      let latestSync = '';
+      if (combinedData.length > 0 && combinedData[0].timestamp) {
+        latestSync = combinedData[0].timestamp;
+      }
+      combinedAudio.forEach(seg => {
+        const audioTime = parseAudioTimestamp(seg.filename);
+        if (audioTime && safeDateMs(audioTime) > safeDateMs(latestSync)) {
+          latestSync = audioTime;
+        }
+      });
+
+      if (latestSync) {
+        setDeviceList(prev => prev.map(d => {
+          if (d.id === rawId || d.id === `device_${rawId}`) {
+            const isNewer = !d.lastActive || safeDateMs(latestSync) >= safeDateMs(d.lastActive);
+            return isNewer ? { ...d, lastActive: latestSync } : d;
+          }
+          return d;
+        }));
+        setSelectedDevice(prev => {
+          if (prev && (prev.id === rawId || prev.id === `device_${rawId}`)) {
+            const isNewer = !prev.lastActive || safeDateMs(latestSync) >= safeDateMs(prev.lastActive);
+            return isNewer ? { ...prev, lastActive: latestSync } : prev;
+          }
+          return prev;
+        });
+      }
+
       setLoadingAudio(false);
     }
   };
@@ -295,16 +357,7 @@ export default function Dashboard() {
     }
     
     // Extract timestamp from the filename to match with DynamoDB 'timestamp'
-    // e.g., "audio_2026-08-03_15-43-12.wav" -> "2026-08-03 15:43:12"
-    const filenameOnly = segment.filename.split('/').pop() || '';
-    const rawTimeStr = filenameOnly.replace('audio_', '').replace('.wav', '');
-    let formattedTimestamp = '';
-    if (rawTimeStr.includes('_')) {
-      const [datePart, timePart] = rawTimeStr.split('_');
-      formattedTimestamp = `${datePart} ${timePart.replace(/-/g, ':')}`;
-    } else {
-      formattedTimestamp = rawTimeStr;
-    }
+    const formattedTimestamp = parseAudioTimestamp(segment.filename);
     
     // Find the specific metrics for this audio file
     const matchedMetric = allMetrics.find(m => m.timestamp === formattedTimestamp || m.s3_key === segment.filename);
@@ -340,11 +393,11 @@ export default function Dashboard() {
   const isDeviceActive = (lastActive?: string) => {
     if (!lastActive) return false;
     try {
-      const dateStr = lastActive.includes(' ') ? lastActive.replace(' ', 'T') + 'Z' : lastActive;
-      const lastActiveDate = new Date(dateStr);
-      const now = new Date();
-      const diffHours = (now.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60);
-      return diffHours <= 6;
+      const ms = safeDateMs(lastActive);
+      if (!ms) return false;
+      const now = new Date().getTime();
+      const diffHours = (now - ms) / (1000 * 60 * 60);
+      return diffHours <= 24;
     } catch {
       return false;
     }
