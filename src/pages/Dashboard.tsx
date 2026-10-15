@@ -135,6 +135,20 @@ const fetchLatestTimestampForDevice = async (deviceId: string): Promise<string> 
     console.error(`Error querying latest audio for device ${rawId}:`, err);
   }
 
+  // 3. Fallback for older / offline devices (like Device 170) across last 90 days
+  const start90 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  try {
+    const res = await fetch(`${METRICS_API_URL}?device_id=${rawId}&start=${start90}&end=${todayStr}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0 && data[0]?.timestamp) {
+        return data[0].timestamp;
+      }
+    }
+  } catch (err) {
+    // Ignore fallback
+  }
+
   return '';
 };
 
