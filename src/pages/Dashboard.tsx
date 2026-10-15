@@ -98,17 +98,19 @@ const parseAudioTimestamp = (filename: string): string => {
   return rawTimeStr;
 };
 
-// Helper to dynamically query DynamoDB for the latest timestamp of a device without hardcoding
+// Helper to dynamically query for the latest timestamp of a device without causing 500 timeouts
 const fetchLatestTimestampForDevice = async (deviceId: string): Promise<string> => {
-  const METRICS_API_URL = 'https://pymedugo4e.execute-api.us-east-1.amazonaws.com/';
   const rawId = deviceId.replace('device_', '');
+  const METRICS_API_URL = 'https://pymedugo4e.execute-api.us-east-1.amazonaws.com/';
   const now = new Date();
-  const endStr = now.toISOString().split('T')[0];
+  const todayStr = now.toISOString().split('T')[0];
+  const curHour = now.getHours();
   
-  // Try recent 30 days first
-  const start30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  // 1. Query today's recent 2-hour window from Metrics API (takes ~1s, returns latest item instantly, 0 errors)
+  const recentStart = `${todayStr} ${Math.max(0, curHour - 1).toString().padStart(2, '0')}:00:00`;
+  const recentEnd = `${todayStr} 23:59:59`;
   try {
-    const res = await fetch(`${METRICS_API_URL}?device_id=${rawId}&start=${start30}&end=${endStr}`);
+    const res = await fetch(`${METRICS_API_URL}?device_id=${rawId}&start=${encodeURIComponent(recentStart)}&end=${encodeURIComponent(recentEnd)}`);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0 && data[0]?.timestamp) {
@@ -116,21 +118,21 @@ const fetchLatestTimestampForDevice = async (deviceId: string): Promise<string> 
       }
     }
   } catch (err) {
-    console.error(`Error querying recent metrics for device ${rawId}:`, err);
+    // Ignore fallback
   }
-  
-  // Fallback to 90 days for older devices (like Device 170)
-  const start90 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  // 2. Query today's audio files (filtered by today's date so it's fast)
   try {
-    const res = await fetch(`${METRICS_API_URL}?device_id=${rawId}&start=${start90}&end=${endStr}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0 && data[0]?.timestamp) {
-        return data[0].timestamp;
+    const audioRes = await fetch(`${API_GATEWAY_URL}?action=get_audio&device_id=${rawId}&start=${todayStr}&end=${todayStr}`);
+    if (audioRes.ok) {
+      const audioData = await audioRes.json();
+      if (Array.isArray(audioData) && audioData.length > 0 && audioData[0]?.filename) {
+        const time = parseAudioTimestamp(audioData[0].filename);
+        if (time) return time;
       }
     }
   } catch (err) {
-    console.error(`Error querying extended metrics for device ${rawId}:`, err);
+    console.error(`Error querying latest audio for device ${rawId}:`, err);
   }
 
   return '';
@@ -231,6 +233,67 @@ export default function Dashboard() {
     return dates;
   };
 
+  // Helper to fetch metrics for a day in 24 parallel 1-hour slices
+  // Completely eliminates AWS Lambda 500 timeouts when devices record high-frequency clips (every 6s)
+  const fetchDayMetricsHourly = async (rawId: string, day: string): Promise<any[]> => {
+    const METRICS_API_URL = 'https://pymedugo4e.execute-api.us-east-1.amazonaws.com/';
+    const hourPromises = Array.from({ length: 24 }, (_, h) => {
+      const hStart = `${day} ${h.toString().padStart(2, '0')}:00:00`;
+      const hEnd = `${day} ${h.toString().padStart(2, '0')}:59:59`;
+      const url = `${METRICS_API_URL}?device_id=${rawId}&start=${encodeURIComponent(hStart)}&end=${encodeURIComponent(hEnd)}`;
+      return fetch(url).then(res => res.ok ? res.json() : []).catch(() => []);
+    });
+
+    const hourResults = await Promise.all(hourPromises);
+    const dayItems: any[] = [];
+    hourResults.forEach(items => {
+      if (Array.isArray(items) && items.length > 0) {
+        dayItems.push(...items);
+      }
+    });
+    return dayItems;
+  };
+
+  // Helper to fetch all audio recordings for a day across 4-hour windows
+  // This bypasses the AWS Lambda 1,194 clip cap so audio all the way from 12 at night (00:00) is retrieved!
+  const fetchDayAudio = async (rawId: string, day: string): Promise<Segment[]> => {
+    const windows = [
+      ['00:00:00', '03:59:59'],
+      ['04:00:00', '07:59:59'],
+      ['08:00:00', '11:59:59'],
+      ['12:00:00', '15:59:59'],
+      ['16:00:00', '19:59:59'],
+      ['20:00:00', '23:59:59']
+    ];
+
+    const promises = windows.map(([s, e]) => {
+      const params = new URLSearchParams();
+      params.append('action', 'get_audio');
+      params.append('device_id', rawId);
+      params.append('start', `${day} ${s}`);
+      params.append('end', `${day} ${e}`);
+      return fetch(`${API_GATEWAY_URL}?${params.toString()}`).then(r => r.ok ? r.json() : []).catch(() => []);
+    });
+
+    const results = await Promise.all(promises);
+    const combined: Segment[] = [];
+    const seen = new Set<string>();
+
+    results.forEach(list => {
+      if (Array.isArray(list)) {
+        list.forEach(item => {
+          if (item?.filename && !seen.has(item.filename)) {
+            seen.add(item.filename);
+            combined.push(item);
+          }
+        });
+      }
+    });
+
+    combined.sort((a, b) => b.filename.localeCompare(a.filename));
+    return combined;
+  };
+
   // 2. Fetch audio and mock insights for a specific device
   const fetchDeviceData = async (deviceId: string) => {
     setLoadingAudio(true);
@@ -242,31 +305,37 @@ export default function Dashboard() {
     let combinedAudio: Segment[] = [];
 
     try {
-      if (startDate && endDate) {
-        // Chunk requests by day to prevent AWS Lambda 6MB payload limit (500 Error)
-        const days = getDatesInRange(startDate, endDate);
-        const promises = days.map(day => {
+      const days = (startDate && endDate) ? getDatesInRange(startDate, endDate) : [new Date().toISOString().split('T')[0]];
+
+      if (days.length <= 3) {
+        // High-precision parallel hourly slices - prevents Lambda 500 timeout on high-volume days
+        const dayResults = await Promise.all(days.map(d => fetchDayMetricsHourly(rawId, d)));
+        dayResults.forEach(dData => {
+          if (Array.isArray(dData)) {
+            combinedData = combinedData.concat(dData);
+          }
+        });
+      } else {
+        // For wide ranges (>3 days), try daily query, with automatic hourly fallback if a high-volume day fails
+        const dayPromises = days.map(async day => {
           const url = new URL(METRICS_API_URL);
           url.searchParams.append('device_id', rawId);
           url.searchParams.append('start', day);
           url.searchParams.append('end', day);
-          return fetch(url.toString()).then(res => res.ok ? res.json() : []);
+          try {
+            const res = await fetch(url.toString());
+            if (res.ok) return await res.json();
+            return await fetchDayMetricsHourly(rawId, day);
+          } catch {
+            return await fetchDayMetricsHourly(rawId, day);
+          }
         });
-        
-        const results = await Promise.all(promises);
+        const results = await Promise.all(dayPromises);
         results.forEach(dayData => {
           if (Array.isArray(dayData)) {
             combinedData = combinedData.concat(dayData);
           }
         });
-      } else {
-        const url = new URL(METRICS_API_URL);
-        url.searchParams.append('device_id', rawId);
-        const res = await fetch(url.toString());
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) combinedData = data;
-        }
       }
 
       // Sort combined data newest first
@@ -303,8 +372,21 @@ export default function Dashboard() {
     }
 
     try {
-      if (startDate && endDate) {
-        const days = getDatesInRange(startDate, endDate);
+      const days = (startDate && endDate) ? getDatesInRange(startDate, endDate) : [new Date().toISOString().split('T')[0]];
+
+      if (days.length <= 3) {
+        // Fetch audio across 4-hour windows for near days to capture all clips from midnight (00:00) without hitting the 1,194 API limit
+        const audioResults = await Promise.all(days.map(d => fetchDayAudio(rawId, d)));
+        const seen = new Set<string>();
+        audioResults.forEach(dayAudio => {
+          dayAudio.forEach(item => {
+            if (item?.filename && !seen.has(item.filename)) {
+              seen.add(item.filename);
+              combinedAudio.push(item);
+            }
+          });
+        });
+      } else {
         const promises = days.map(day => {
           const params = new URLSearchParams();
           params.append('action', 'get_audio');
@@ -320,19 +402,9 @@ export default function Dashboard() {
             combinedAudio = combinedAudio.concat(dayData);
           }
         });
-      } else {
-        const params = new URLSearchParams();
-        params.append('action', 'get_audio');
-        params.append('device_id', rawId);
-        if (startDate) params.append('start', startDate);
-        if (endDate) params.append('end', endDate);
-        const response = await fetch(`${API_GATEWAY_URL}?${params.toString()}`);
-        if (response.ok) {
-           const data = await response.json();
-           if (Array.isArray(data)) combinedAudio = data;
-        }
       }
       
+      combinedAudio.sort((a, b) => b.filename.localeCompare(a.filename));
       setAudioSegments(combinedAudio);
     } catch (err: any) {
       console.error(err);
@@ -408,7 +480,11 @@ export default function Dashboard() {
     const formattedTimestamp = parseAudioTimestamp(segment.filename);
     
     // Find the specific metrics for this audio file
-    const matchedMetric = allMetrics.find(m => m.timestamp === formattedTimestamp || m.s3_key === segment.filename);
+    const matchedMetric = allMetrics.find(m => 
+      m.timestamp === formattedTimestamp || 
+      m.s3_key === segment.filename || 
+      (m.s3_key && m.s3_key.endsWith(segment.filename))
+    );
     
     if (matchedMetric && matchedMetric.features) {
       setInsights({
